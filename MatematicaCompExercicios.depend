@@ -1,0 +1,112 @@
+# depslib dependency file v1.0
+1540492967 source:c:\users\regina\desktop\matematicacompexercicios\main.c
+	"biblioteca.h"
+
+1540502985 c:\users\regina\desktop\matematicacompexercicios\biblioteca.h
+	<locale.h>
+	<mysql.h>
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	<windows.h>
+
+1540176152 c:\users\regina\desktop\matematicacompexercicios\mysql\include\mysql.h
+	<sys/types.h>
+	<winsock.h>
+	<winsock2.h>
+	"mysql_com.h"
+	"mysql_time.h"
+	"mysql_version.h"
+	"typelib.h"
+	"my_list.h"
+	"my_alloc.h"
+
+1476131146 c:\users\regina\desktop\matematicacompexercicios\mysql\include\mysql_com.h
+
+1476131172 c:\users\regina\desktop\matematicacompexercicios\mysql\include\mysql_time.h
+
+1476131183 c:\users\regina\desktop\matematicacompexercicios\mysql\include\mysql_version.h
+	<custom_conf.h>
+
+1476131323 c:\users\regina\desktop\matematicacompexercicios\mysql\include\typelib.h
+
+1476131368 c:\users\regina\desktop\matematicacompexercicios\mysql\include\my_list.h
+
+1476131377 c:\users\regina\desktop\matematicacompexercicios\mysql\include\my_alloc.h
+
+1540233841 c:\users\regina\desktop\matematicacompexercicios\basededados.h
+	<mysql.h>
+	<windows.h>
+
+1540174835 c:\users\regina\desktop\matematicacompexercicios\sisimc.h
+
+1540518889 source:c:\users\regina\desktop\matematicacompexercicios\projeto\main.c
+	"biblioteca.h"
+
+1540518888 c:\users\regina\desktop\matematicacompexercicios\projeto\biblioteca.h
+	<locale.h>
+	<mysql.h>
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	<windows.h>
+
+1540176152 c:\users\regina\desktop\matematicacompexercicios\projeto\mysql\include\mysql.h
+	<sys/types.h>
+	<winsock.h>
+	<winsock2.h>
+	"mysql_com.h"
+	"mysql_time.h"
+	"mysql_version.h"
+	"typelib.h"
+	"my_list.h"
+	"my_alloc.h"
+
+1476131146 c:\users\regina\desktop\matematicacompexercicios\projeto\mysql\include\mysql_com.h
+
+1476131172 c:\users\regina\desktop\matematicacompexercicios\projeto\mysql\include\mysql_time.h
+
+1476131183 c:\users\regina\desktop\matematicacompexercicios\projeto\mysql\include\mysql_version.h
+	<custom_conf.h>
+
+1476131323 c:\users\regina\desktop\matematicacompexercicios\projeto\mysql\include\typelib.h
+
+1476131368 c:\users\regina\desktop\matematicacompexercicios\projeto\mysql\include\my_list.h
+
+1476131377 c:\users\regina\desktop\matematicacompexercicios\projeto\mysql\include\my_alloc.h
+
+1540543323 source:c:\users\regina\desktop\matematicacompexercicios\codigo_fonte\main.c
+	"biblioteca.h"
+
+1540543610 c:\users\regina\desktop\matematicacompexercicios\codigo_fonte\biblioteca.h
+	<locale.h>
+	<mysql.h>
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	<windows.h>
+
+1540176152 c:\users\regina\desktop\matematicacompexercicios\codigo_fonte\mysql\include\mysql.h
+	<sys/types.h>
+	<winsock.h>
+	<winsock2.h>
+	"mysql_com.h"
+	"mysql_time.h"
+	"mysql_version.h"
+	"typelib.h"
+	"my_list.h"
+	"my_alloc.h"
+
+1476131146 c:\users\regina\desktop\matematicacompexercicios\codigo_fonte\mysql\include\mysql_com.h
+
+1476131172 c:\users\regina\desktop\matematicacompexercicios\codigo_fonte\mysql\include\mysql_time.h
+
+1476131183 c:\users\regina\desktop\matematicacompexercicios\codigo_fonte\mysql\include\mysql_version.h
+	<custom_conf.h>
+
+1476131323 c:\users\regina\desktop\matematicacompexercicios\codigo_fonte\mysql\include\typelib.h
+
+1476131368 c:\users\regina\desktop\matematicacompexercicios\codigo_fonte\mysql\include\my_list.h
+
+1476131377 c:\users\regina\desktop\matematicacompexercicios\codigo_fonte\mysql\include\my_alloc.h
+
