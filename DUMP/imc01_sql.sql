@@ -21,12 +21,12 @@ USE `imc01` ;
 -- Table `imc01`.`usuarios`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `imc01`.`usuarios` (
-  `idusuario` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
   `nome` VARCHAR(60) CHARACTER SET 'utf8' COLLATE 'utf8_general_ci' NOT NULL,
   `sexo` ENUM('M', 'F') CHARACTER SET 'utf8' COLLATE 'utf8_general_ci' NOT NULL,
   `login` VARCHAR(20) CHARACTER SET 'utf8' COLLATE 'utf8_general_ci' NOT NULL,
   `senha` INT(5) NOT NULL,
-  PRIMARY KEY (`idusuario`),
+  PRIMARY KEY (`id`),
   UNIQUE INDEX `login_UNIQUE` (`login` ASC))
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8;
@@ -36,15 +36,15 @@ DEFAULT CHARACTER SET = utf8;
 -- Table `imc01`.`registros`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `imc01`.`registros` (
-  `idregistro` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `usuarios_idusuario` INT UNSIGNED NOT NULL,
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `usuarios_id` INT UNSIGNED NOT NULL,
   `imc` VARCHAR(45) CHARACTER SET 'utf8' COLLATE 'utf8_general_ci' NOT NULL DEFAULT '0.00',
   `datahora` VARCHAR(22) CHARACTER SET 'utf8' COLLATE 'utf8_general_ci' NOT NULL,
-  PRIMARY KEY (`idregistro`, `usuarios_idusuario`),
-  INDEX `fk_registros_usuarios_idx` (`usuarios_idusuario` ASC),
+  PRIMARY KEY (`id`, `usuarios_id`),
+  INDEX `fk_registros_usuarios_idx` (`usuarios_id` ASC),
   CONSTRAINT `fk_registros_usuarios`
-    FOREIGN KEY (`usuarios_idusuario`)
-    REFERENCES `imc01`.`usuarios` (`idusuario`)
+    FOREIGN KEY (`usuarios_id`)
+    REFERENCES `imc01`.`usuarios` (`id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB

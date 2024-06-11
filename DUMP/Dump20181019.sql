@@ -25,13 +25,13 @@ DROP TABLE IF EXISTS `registros`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `registros` (
-  `idregistro` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `usuarios_idusuario` int(10) unsigned NOT NULL,
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `usuarios_id` int(10) unsigned NOT NULL,
   `imc` varchar(45) NOT NULL DEFAULT '0.00',
   `datahora` varchar(22) NOT NULL,
-  PRIMARY KEY (`idregistro`,`usuarios_idusuario`),
-  KEY `fk_registros_usuarios_idx` (`usuarios_idusuario`),
-  CONSTRAINT `fk_registros_usuarios` FOREIGN KEY (`usuarios_idusuario`) REFERENCES `usuarios` (`idusuario`) ON DELETE CASCADE ON UPDATE CASCADE
+  PRIMARY KEY (`id`,`usuarios_id`),
+  KEY `fk_registros_usuarios_idx` (`usuarios_id`),
+  CONSTRAINT `fk_registros_usuarios` FOREIGN KEY (`usuarios_id`) REFERENCES `usuarios` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -52,12 +52,12 @@ DROP TABLE IF EXISTS `usuarios`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `usuarios` (
-  `idusuario` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `nome` varchar(60) NOT NULL,
   `sexo` enum('M','F') NOT NULL,
   `login` varchar(20) NOT NULL,
   `senha` int(5) NOT NULL,
-  PRIMARY KEY (`idusuario`),
+  PRIMARY KEY (`id`),
   UNIQUE KEY `login_UNIQUE` (`login`)
 ) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
