@@ -60,3 +60,4 @@ dkms.conf
 # Generated using ignr.py - github.com/Antrikshy/ignr.py
 
 data/
+configdb

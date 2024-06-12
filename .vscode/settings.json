@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "locale.h": "c",
+        "np2ansi-color-codes.h": "c",
+        "mysql.h": "c"
+    },
+    "C_Cpp.errorSquiggles": "disabled"
+}

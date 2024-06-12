@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-gcc main.c np2.c -Werror -Wall -o np2bin.out
+gcc -Werror -Wall main.c np2.c np2txt.c -o np2bin.out -lpthread -lSDL2 -lmysqlclient
