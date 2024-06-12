@@ -163,9 +163,9 @@ void _mainMenu()
     case 1:
         _starWarsRobos();
         break;
-    // case 2:
-    //     _imcPrincipal();
-    //     break;
+    case 2:
+        _imcPrincipal();
+        break;
     case 3:
         _dbCheckConn();
         _mainMenu();
@@ -218,7 +218,7 @@ void _starWarsRobos()
 }
 
 // // INICIA / PARA A MUSICA
-// void playPause(void)
+// void playPause()
 // {
 
 //     int pid = 0;
@@ -253,88 +253,65 @@ void _startNP2()
     _mainMenu(0);
 }
 
-// /////////////////////////////////////////////////////////////////////////////////////////////
-// //
-// //      FUN��ES COM O PREFIXO "_imc" SE REFEREM AO SISTEMA IMC.
-// //
-// /////////////////////////////////////////////////////////////////////////////////////////////
+void _imcPrincipal()
+{
+    _imcTitulo();
+    _imcMenu();
+}
 
-// // IMPRIME A TELA INICIAL DO SISTEMA
-// void _imcPrincipal(void)
-// {
+void _imcTitulo()
+{
+    system(CMD_CLEAR);
+    printf("################################################################################\n");
+    printf("#                 SISTEMA - INDICE DE MASSA CORPORAL (com MySQL)               #\n");
+    printf("################################################################################\n\n");
+}
 
-//     _imcTitulo();
-//     _imcMenu();
-// }
+void _imcMenu()
+{
+    printf("\t- [1]ENTRAR\n");
+    printf("\t- [2]CADASTRE-SE\n");
+    printf("\n");
+    printf("\t- [9]VOLTAR AO MENU PRINCÍPAL\n");
+    printf("\t- [0]SAIR\n");
+    printf("\n\t");
 
-// // IMPRIME TITULO DO SISTEMA
-// void _imcTitulo(void)
-// {
-//     int i;
-//     system(CMD_CLEAR);
-//     for (i = 0; i < 80; i++)
-//     {
-//         printf("%c", 26);
-//     }
-//     printf("%c                 SISTEMA - INDICE DE MASSA CORPORAL (com MySQL)               %c", 24, 25);
-//     for (i = 0; i < 80; i++)
-//     {
-//         printf("%c", 27);
-//     }
-// }
+    int op;
+    scanf("%d", &op);
 
-// // IMPRIME MENU PRINC�PAL DO SISTEMAS
-// void _imcMenu(void)
-// {
+    switch (op)
+    {
+    case 0:
+        if (_confirmMessageBox("SAIR", "Você deseja realmente SAIR?") == 1)
+        {
+            _exitNP2();
+        }
+        _imcPrincipal();
+        break;
+    case 1:
+        // _imcEntrar();
+        break;
+    case 2:
+        _imcCad();
+        break;
+    case 9:
+        _mainMenu();
+        break;
+    default:
+        _imcPrincipal();
+        break;
+    }
+}
 
-//     int op;
-//     printf("\t- [1]ENTRAR\n");
-//     printf("\t- [2]CADASTRE-SE\n");
-//     printf("\n");
-//     printf("\t- [9]VOLTAR AO MENU PRINC�PAL\n");
-//     printf("\t- [0]SAIR\n");
-//     printf("\n\t");
-//     scanf("%d", &op);
-//     switch (op)
-//     {
-//     case 0:
-//         if (MessageBox(NULL, "Voc� deseja realmente SAIR?", "SAIR", MB_YESNO | MB_ICONQUESTION) == 6)
-//         {
-//             sair();
-//         }
-//         else
-//         {
-//             _imcPrincipal();
-//         }
-//         break;
-//     case 1:
-//         _imcEntrar();
-//         break;
-//     case 2:
-//         _imcCad();
-//         break;
-//     case 9:
-//         _startNP2(0);
-//         break;
-//     default:
-//         MessageBox(NULL, "Op��o inv�lida!", "ERRO!", MB_OK | MB_ICONERROR);
-//         _imcPrincipal();
-//         break;
-//     }
-// }
-
-// // TELA DE CADASTRO DE NOVOS USU�RIOS
-// void _imcCad(void)
-// {
-
-//     _imcTitulo();
-//     _BD_cadastrarUser();
-//     system("pause");
-//     _imcPrincipal();
-// }
+void _imcCad()
+{
+    _imcTitulo();
+    _dbCreateUser();
+    _imcPrincipal();
+}
 
 // // LOGIN DE ACESSO AO SISTEMA
-// void _imcEntrar(void)
+// void _imcEntrar()
 // {
 
 //     char login[20];
@@ -475,189 +452,177 @@ void _startNP2()
 //     }
 // }
 
-// /////////////////////////////////////////////////////////////////////////////////////////////
-// //
-// //      FUN��ES COM O PREFIXO "_BD_" ACESSAM O BANCO DE DADOS.
-// //
-// /////////////////////////////////////////////////////////////////////////////////////////////
+void _dbCreateUser()
+{
+    _dbSetup();
+    _dbGetConfig(&dbConfig);
 
-// // CADASTRAR NO BD UM NOVO USU�RIO
-// int _BD_cadastrarUser(void)
-// {
+    t_User user;
 
-//     t_MySQLConn con;
-//     t_DBInfo bd;
-//     _dbSetup();
-//     _dbGetConfig(&dbConfig);
+    int cont, error, space = 0;
 
-//     t_User novo;
-//     int cont;
+    do
+    {
+        fflush(stdin);
+        printf(">> DIGITE SEU NOME COMPLETO:\n");
+        fgets(user.nome);
+        strupr(user.nome);
+        for (cont = 0; cont < strlen(user.nome); cont++)
+        {
+            if (user.nome[cont] == ' ')
+            {
+                space = 1;
+            }
+        }
+        if (space == 0)
+        {
+            printf("ERRO! Nome inválido.\n");
+        }
+    } while (space == 0);
 
-//     int espaco = 0;
-//     do
-//     {
-//         fflush(stdin);
-//         printf(">> DIGITE SEU NOME COMPLETO:\n");
-//         fgets(novo.nome);
-//         strupr(novo.nome);
-//         for (cont = 0; cont < strlen(novo.nome); cont++)
-//         {
-//             if (novo.nome[cont] == ' ')
-//             {
-//                 espaco = 1;
-//             }
-//         }
-//         if (espaco == 0)
-//         {
-//             printf("ERRO! Nome inv�lido.\n");
-//         }
-//     } while (espaco == 0);
-//     do
-//     {
-//         char sexo;
-//         fflush(stdin);
-//         printf(">> QUAL SEU SEXO (M / F):\n");
-//         scanf("%c", &sexo);
-//         novo.sexo = toupper(sexo);
-//         if (novo.sexo != 'M' && novo.sexo != 'F')
-//         {
-//             printf("ERRO! Alternativa inv�lida.\n");
-//         }
-//     } while (novo.sexo != 'M' && novo.sexo != 'F');
+    char sexo;
+    do
+    {
+        fflush(stdin);
+        printf(">> QUAL SEU SEXO (M / F):\n");
+        scanf("%c", &sexo);
 
-//     int erro;
-//     do
-//     {
-//         int spc;
-//         do
-//         {
-//             spc = 0;
-//             do
-//             {
-//                 fflush(stdin);
-//                 printf(">> NOME DE USU�RIO (MAX - 20):\n");
-//                 fgets(novo.login);
-//                 if (strlen(novo.login) > 20)
-//                 {
-//                     printf("ERRO! Nome de usu�rio deve ter no maximo 20 caracteres.\n");
-//                 }
-//             } while (strlen(novo.login) > 20);
+        if (sexo != 'M' && sexo != 'F')
+        {
+            printf("ERRO! Alternativa inválida.\n");
+        }
+    } while (sexo != 'M' && sexo != 'F');
 
-//             for (cont = 0; cont < strlen(novo.login); cont++)
-//             {
-//                 if (novo.login[cont] == ' ')
-//                 {
-//                     printf("ERRO! N�o pode haver espa�os.\n");
-//                     spc = 1;
-//                 }
-//                 break;
-//             }
-//         } while (spc == 1);
-//         if (_BD_validarUserName(novo.login) == 1)
-//         {
-//             printf("Login j� utilizado por outro usu�rio :(\n");
-//         }
-//         else
-//         {
-//             if (_BD_validarUserName(novo.login) == -1)
-//             {
-//                 erro = 1;
-//             }
-//             else
-//             {
-//                 if (_BD_validarUserName(novo.login) == -2)
-//                 {
-//                     erro = 1;
-//                     _conStatus02();
-//                 }
-//                 else
-//                 {
-//                     if (_BD_validarUserName(novo.login) == -3)
-//                     {
-//                         erro = 1;
-//                         _conStatus03();
-//                     }
-//                     else
-//                     {
-//                         erro = 0;
-//                     }
-//                 }
-//             }
-//         }
-//     } while (erro != 0);
+    do
+    {
+        int spc;
 
-//     int senhaR;
-//     do
-//     {
-//         do
-//         {
-//             printf(">> DIGITE UMA SENHA (APENAS N�MEROS, MAX - 5):\n");
-//             fflush(stdin);
-//             scanf("%d", &novo.senha);
-//             if (novo.senha > 99999)
-//             {
-//                 printf("ERRO! Senha deve ter no maximo 5 digitos.\n");
-//             }
-//         } while (novo.senha > 99999);
+        do
+        {
+            spc = 0;
+            do
+            {
+                fflush(stdin);
+                printf(">> NOME DE USUÁRIO (MAX - 20):\n");
+                fgets(user.login);
 
-//         printf(">> REPITA A SENHA DE ACESSO:\n");
-//         fflush(stdin);
-//         scanf("%d", &senhaR);
-//         if (senhaR != novo.senha)
-//         {
-//             printf("ERRO! Senhas n�o coincidem.\n");
-//         }
-//     } while (senhaR != novo.senha);
+                if (strlen(user.login) > 20)
+                {
+                    printf("ERRO! Nome de usuário deve ter no maximo 20 caracteres.\n");
+                }
 
-//     if (connObj.conn = mysql_init(0))
-//     {
-//         if (connObj.conn = mysql_real_connect(connObj.conn, dbConfig.host, dbConfig.user, dbConfig.pass, dbConfig.database, dbConfig.port, NULL, 0))
-//         {
-//             char query[200];
-//             sprintf(query, "INSERT INTO t_Users (nome, sexo, login, senha) VALUES ('%s','%c','%s','%d')", novo.nome, novo.sexo, novo.login, novo.senha);
-//             connObj.qstate = mysql_query(connObj.conn, query);
-//             if (!connObj.qstate)
-//             {
-//                 printf("DADOS INSERIDOS COM SUCESSO!\n");
-//             }
-//             else
-//             {
-//                 int op;
-//                 printf("ERRO! Algo deu errado...\n");
-//                 printf(" [1] - Tentar Novamente / [2] - voltar\n");
-//                 do
-//                 {
-//                     printf(" ");
-//                     scanf("%d", &op);
-//                     if (op == 1)
-//                     {
-//                         system(CMD_CLEAR);
-//                         _imcCad();
-//                     }
-//                     else
-//                     {
-//                         if (op == 2)
-//                         {
-//                             _imcPrincipal();
-//                         }
-//                         else
-//                         {
-//                             printf("Op��o Inv�lida! :(");
-//                         }
-//                     }
-//                 } while (op != 1 && op != 2);
-//             }
-//         }
-//         else
-//         {
-//             _conStatus02();
-//         }
-//     }
-//     else
-//     {
-//         _conStatus03();
-//     }
-// }
+            } while (strlen(user.login) > 20);
+
+            for (cont = 0; cont < strlen(
+        }
+    } while (spc == 1);
+    if (_BD_validarUserName(user.login) == 1)
+    {
+        printf("Login j� utilizado por outro usu�rio :(\n");
+    }
+    else
+    {
+        if (_BD_validarUserName(user.login) == -1)
+        {
+            erro = 1;
+        }
+        else
+        {
+            if (_BD_validarUserName(user.login) == -2)
+            {
+                erro = 1;
+                _conStatus02();
+            }
+            else
+            {
+                if (_BD_validarUserName(user.login) == -3)
+                {
+                    erro = 1;
+                    _conStatus03();
+                }
+                else
+                {
+                    erro = 0;
+                }
+            }
+        }
+    }
+}
+while (erro != 0)
+    ;
+
+int senhaR;
+do
+{
+    do
+    {
+        printf(">> DIGITE UMA SENHA (APENAS N�MEROS, MAX - 5):\n");
+        fflush(stdin);
+        scanf("%d", &user.senha);
+        if (user.senha > 99999)
+        {
+            printf("ERRO! Senha deve ter no maximo 5 digitos.\n");
+        }
+    } while (user.senha > 99999);
+
+    printf(">> REPITA A SENHA DE ACESSO:\n");
+    fflush(stdin);
+    scanf("%d", &senhaR);
+    if (senhaR != user.senha)
+    {
+        printf("ERRO! Senhas n�o coincidem.\n");
+    }
+} while (senhaR != user.senha);
+
+if (connObj.conn = mysql_init(0))
+{
+    if (connObj.conn = mysql_real_connect(connObj.conn, dbConfig.host, dbConfig.user, dbConfig.pass, dbConfig.database, dbConfig.port, NULL, 0))
+    {
+        char query[200];
+        sprintf(query, "INSERT INTO t_Users (nome, sexo, login, senha) VALUES ('%s','%c','%s','%d')", user.nome, user.sexo, user.login, user.senha);
+        connObj.qstate = mysql_query(connObj.conn, query);
+        if (!connObj.qstate)
+        {
+            printf("DADOS INSERIDOS COM SUCESSO!\n");
+        }
+        else
+        {
+            int op;
+            printf("ERRO! Algo deu errado...\n");
+            printf(" [1] - Tentar Novamente / [2] - voltar\n");
+            do
+            {
+                printf(" ");
+                scanf("%d", &op);
+                if (op == 1)
+                {
+                    system(CMD_CLEAR);
+                    _imcCad();
+                }
+                else
+                {
+                    if (op == 2)
+                    {
+                        _imcPrincipal();
+                    }
+                    else
+                    {
+                        printf("Op��o Inv�lida! :(");
+                    }
+                }
+            } while (op != 1 && op != 2);
+        }
+    }
+    else
+    {
+        _conStatus02();
+    }
+}
+else
+{
+    _conStatus03();
+}
+}
 
 // // ATUALIZAR CADASTRO DE USU�RIO NO BD
 // void _BD_atualizarCad(char login[20], int senha)

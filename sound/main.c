@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <SDL2/SDL.h>
 
-int main(void)
+int main()
 {
     SDL_AudioSpec wav_spec;
     Uint32 wav_length;

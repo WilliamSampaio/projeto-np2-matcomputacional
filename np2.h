@@ -56,24 +56,26 @@ void _starWarsRobos();
 // void playPause();
 void _startNP2();
 
-// void _imcPrincipal(void);
-// void _imcTitulo(void);
-// void _imcMenu(void);
-// void _imcCad(void);
-// void _imcEntrar(void);
+void _imcPrincipal();
+void _imcTitulo();
+void _imcMenu();
+void _imcCad();
+
+// void _imcEntrar();
 // void _imcRelatorio(char *, int);
 // void _imcExibirImc(char *, int);
 // void _imcDelCadImc(char *, int);
 // void _imcUpdateCadImc(char *, int);
 // void _imcSessao(char *, int);
 
-// void load(void);
+// void load();
 
 void _dbSetup();
 void _dbGetConfig(t_DBInfo *);
 void _dbUpdateConfig();
 void _dbCheckConn();
-// int _BD_cadastrarUser(void);
+void _dbCreateUser();
+
 // void _BD_atualizarCad(char *, int);
 // void _BD_pegarUserInfo(char *, int);
 // void _BD_registrarImc(char *, int);
