@@ -16,6 +16,17 @@
 #include "np2txt.h"
 #include "np2ansi-color-codes.h"
 
+const char *fileDb = "configdb";
+
+FILE *_configDb;
+
+t_MySQLConn connObj;
+t_DBInfo dbConfig;
+
+pthread_t soundPthreadId;
+
+int playing = _False;
+
 void _msgSuccess(char *_title, char *_message)
 {
     printf("%s::: %s:%s %s%s\n", BHGRN, _title, GRN, _message, COLOR_RESET);
@@ -89,17 +100,6 @@ void _confirmOk(char *_title, char *_message, int _status)
     getchar();
 }
 
-const char *fileDb = "configdb";
-
-FILE *_configDb;
-
-t_MySQLConn connObj;
-t_DBInfo dbConfig;
-
-pthread_t soundPthreadId;
-
-int playing = _False;
-
 char *_dateTime()
 {
     return __DATE__ " - " __TIME__;
@@ -161,41 +161,6 @@ void _stopSound()
     printf("%d", pthread_cancel(soundPthreadId));
     playing = 0;
 }
-
-// int _conStatus01(char *_database)
-// {
-
-//     char str[100];
-//     sprintf(str, "CONEX�O OK! BASE DE DADOS: %s\n(%s)", _database, _dateTime());
-//     // MessageBox(NULL, str, "Conex�o Status", MB_OK | MB_ICONINFORMATION);
-//     return 1;
-// }
-
-// int _conStatus02()
-// {
-
-//     char str[200];
-//     sprintf(str, "IMPOSS�VEL ESTABELECER CONEX�O!\n- Verifique se h� conex�o com a internet.\n- Verifique se as configura��es de ACESSO ao BANCO DE DADOS est�o CORRETAS.\n- Verifique se o MySQL est� ativo (localhost).");
-//     // MessageBox(NULL, str, "Conex�o Status", MB_OK | MB_ICONSTOP);
-//     return 0;
-// }
-
-// int _conStatus03()
-// {
-
-//     char str[100];
-//     sprintf(str, "ERRO! N�O foi possivel criar o OBJETO de conex�o.");
-//     // MessageBox(NULL, str, "Conex�o Status", MB_OK | MB_ICONWARNING);
-//     return -1;
-// }
-
-// void _conStatus00(t_MySQLConn _con)
-// {
-
-//     char str[100];
-//     sprintf(str, "ERRO: %s\n", mysql_error(_con.conn));
-//     // MessageBox(NULL, str, "Conex�o Status", MB_OK | MB_ICONWARNING);
-// }
 
 void _exitNP2()
 {
@@ -285,36 +250,6 @@ void _starWarsRobos()
         }
     } while (op < 0 || op > 2);
 }
-
-// // INICIA / PARA A MUSICA
-// void playPause()
-// {
-
-//     int pid = 0;
-//     FILE *pid_;
-
-//     pid_ = fopen("sound/status", "r");
-
-//     fscanf(pid_, "%d", &pid);
-
-//     if (pid == 0)
-//     {
-//         WinExec("sound/sound.exe", SW_HIDE);
-//         fclose(pid_);
-//         return;
-//     }
-//     else
-//     {
-//         char kill[100];
-//         sprintf(kill, "taskkill /f /pid %d", pid);
-//         system(kill);
-//         system(CMD_CLEAR);
-//         pid_ = fopen("sound/status", "w");
-//         fprintf(pid_, "");
-//         fclose(pid_);
-//         return;
-//     }
-// }
 
 void _startNP2()
 {

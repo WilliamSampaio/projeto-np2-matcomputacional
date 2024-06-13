@@ -65,16 +65,10 @@ void *_sdl2PlayWav(void *);
 void _playSound();
 void _stopSound();
 
-// int _conStatus01(char *);
-// int _conStatus02();
-// int _conStatus03();
-// void _conStatus00(t_MySQLConn);
-// void equipe(int);
 void _exitNP2();
 
 void _mainMenu();
 void _starWarsRobos();
-// void playPause();
 void _startNP2();
 
 void _imcPrincipal();
@@ -95,8 +89,8 @@ void _dbSetup();
 void _dbGetConfig(t_DBInfo *);
 void _dbUpdateConfig();
 void _dbCheckConn();
-void _dbCreateUser();
 
+void _dbCreateUser();
 // void _BD_atualizarCad(char *, int);
 // void _BD_pegarUserInfo(char *, int);
 // void _BD_registrarImc(char *, int);
