@@ -979,128 +979,135 @@ void _imcCad()
 //     }
 // }
 
-// // PEGA DADOS DO t_User LOGADO
-// void _BD_pegarUserInfo(char login[20], int senha)
-// {
+void _BD_pegarUserInfo(char *login, int senha)
+{
+    _dbSetup();
+    _dbGetConfig(&dbConfig);
 
-//     _dbSetup();
-//     _dbGetConfig(&dbConfig);
+    if ((connObj.conn = mysql_init(0)))
+    {
+        if ((connObj.conn = mysql_real_connect(
+                 connObj.conn,
+                 dbConfig.host,
+                 dbConfig.user,
+                 dbConfig.pass,
+                 dbConfig.database,
+                 dbConfig.port, NULL, 0)))
+        {
 
-//     if (connObj.conn = mysql_init(0))
-//     {
-//         if (connObj.conn = mysql_real_connect(connObj.conn, dbConfig.host, dbConfig.user, dbConfig.pass, dbConfig.database, dbConfig.port, NULL, 0))
-//         {
+            int id;
+            int i;
+            int contReg = 0;
+            float contRegTotal = 0;
+            float media;
+            char ultimoReg[22];
+            char info[80];
 
-//             int id;
-//             int i;
-//             int contReg = 0;
-//             float contRegTotal = 0;
-//             float media;
-//             char ultimoReg[22];
-//             char info[80];
+            strcpy(ultimoReg, "NULL");
 
-//             strcpy(ultimoReg, "NULL");
+            char query[200];
+            sprintf(query, "SELECT id,nome,sexo,login,senha from usuarios where login = '%s' and senha = '%d'", login, senha);
+            connObj.qstate = mysql_query(connObj.conn, query);
+            if (!connObj.qstate)
+            {
+                connObj.res = mysql_store_result(connObj.conn);
+                while ((connObj.row = mysql_fetch_row(connObj.res)))
+                {
+                    id = atoi(connObj.row[0]);
+                    int charCont = (80 - (10 + strlen(connObj.row[1]))) / 2;
+                    for (i = 0; i < charCont; i++)
+                    {
+                        printf(" ");
+                    }
+                    printf("BEM-VIND");
+                    if (strcmp(connObj.row[2], "M") == 0)
+                    {
+                        printf("O");
+                    }
+                    else
+                    {
+                        printf("A");
+                    }
+                    printf(" %s", connObj.row[1]);
+                    printf("\n");
+                }
+            }
+            else
+            {
+                // _conStatus00(connObj);
+                mysql_close(connObj.conn);
+            }
 
-//             char query[200];
-//             sprintf(query, "select idt_User,nome,sexo,login,senha from t_Users where login = '%s' and senha = '%d'", login, senha);
-//             connObj.qstate = mysql_query(connObj.conn, query);
-//             if (!connObj.qstate)
-//             {
-//                 connObj.res = mysql_store_result(connObj.conn);
-//                 while (connObj.row = mysql_fetch_row(connObj.res))
-//                 {
-//                     id = atoi(connObj.row[0]);
-//                     int charCont = (80 - (10 + strlen(connObj.row[1]))) / 2;
-//                     for (i = 0; i < charCont; i++)
-//                     {
-//                         printf(" ");
-//                     }
-//                     printf("BEM-VIND");
-//                     if (strcmp(connObj.row[2], "M") == 0)
-//                     {
-//                         printf("O");
-//                     }
-//                     else
-//                     {
-//                         printf("A");
-//                     }
-//                     printf(" %s", connObj.row[1]);
-//                     printf("\n");
-//                 }
-//             }
-//             else
-//             {
-//                 _conStatus00(connObj);
-//                 mysql_close(connObj.conn);
-//             }
+            sprintf(query, "SELECT * FROM registros WHERE usuarios_id = '%d'", id);
+            connObj.qstate = mysql_query(connObj.conn, query);
+            if (!connObj.qstate)
+            {
+                connObj.res = mysql_store_result(connObj.conn);
+                printf("+-------------------------------------------------------+\n");
+                printf("|\tID\t|\tIMC\t|\tDATA HORA\t|\n");
+                printf("+-------------------------------------------------------+\n");
+                while ((connObj.row = mysql_fetch_row(connObj.res)))
+                {
+                    printf("|\t%s\t|\tIMC\t|\tDATA HORA\t|\n",connObj.row[0]);
+                    contReg++;
+                    contRegTotal += atof(connObj.row[2]);
+                    strcpy(ultimoReg, connObj.row[3]);
+                }
 
-//             sprintf(query, "SELECT * FROM registros WHERE t_Users_idt_User = '%d'", id);
-//             connObj.qstate = mysql_query(connObj.conn, query);
-//             if (!connObj.qstate)
-//             {
+                if (contReg != 0)
+                {
+                    media = contRegTotal / contReg;
+                }
+                else
+                {
+                    media = 0;
+                }
 
-//                 connObj.res = mysql_store_result(connObj.conn);
-//                 while (connObj.row = mysql_fetch_row(connObj.res))
-//                 {
-//                     contReg++;
-//                     contRegTotal += atof(connObj.row[2]);
-//                     strcpy(ultimoReg, connObj.row[3]);
-//                 }
+                printf("     ");
+                for (i = 0; i < 70; i++)
+                {
+                    printf("-");
+                }
+                printf("\n");
 
-//                 if (contReg != 0)
-//                 {
-//                     media = contRegTotal / contReg;
-//                 }
-//                 else
-//                 {
-//                     media = 0;
-//                 }
+                char str[24];
+                sprintf(info, " %d - Registros | Média: %.2f | Último imc [", contReg, media);
+                sprintf(str, "%s]", ultimoReg);
+                strcat(info, str);
 
-//                 printf("     ");
-//                 for (i = 0; i < 70; i++)
-//                 {
-//                     printf("-");
-//                 }
-//                 printf("\n");
+                int tam = strlen(info);
+                tam = (80 - tam) / 2;
+                for (i = 0; i < tam; i++)
+                {
+                    printf(" ");
+                }
+                printf("%s", info);
+                printf("\n");
 
-//                 char str[24];
-//                 sprintf(info, " %d - Registros | M�dia: %.2f | �ltimo imc [", contReg, media);
-//                 sprintf(str, "%s]", ultimoReg);
-//                 strcat(info, str);
-
-//                 int tam = strlen(info);
-//                 tam = (80 - tam) / 2;
-//                 for (i = 0; i < tam; i++)
-//                 {
-//                     printf(" ");
-//                 }
-//                 printf("%s", info);
-//                 printf("\n");
-
-//                 printf("     ");
-//                 for (i = 0; i < 70; i++)
-//                 {
-//                     printf("-");
-//                 }
-//                 printf("\n");
-//             }
-//             else
-//             {
-//                 _conStatus00(connObj);
-//                 mysql_close(connObj.conn);
-//             }
-//             mysql_close(connObj.conn);
-//         }
-//         else
-//         {
-//             _conStatus02();
-//         }
-//     }
-//     else
-//     {
-//         _conStatus03();
-//     }
-// }
+                printf("     ");
+                for (i = 0; i < 70; i++)
+                {
+                    printf("-");
+                }
+                printf("\n");
+            }
+            else
+            {
+                // _conStatus00(connObj);
+                mysql_close(connObj.conn);
+            }
+            mysql_close(connObj.conn);
+        }
+        else
+        {
+            // _conStatus02();
+        }
+    }
+    else
+    {
+        _confirmOk("ERRO FATAL!", "NÃO foi possivel criar o OBJETO de conexão!", _Danger);
+    }
+}
 
 // // ADICIONA UM NOVO IMC (REGISTRO) NO BD
 // void _BD_registrarImc(char login[20], int senha)

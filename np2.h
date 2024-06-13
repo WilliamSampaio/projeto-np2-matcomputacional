@@ -96,7 +96,7 @@ void _dbCheckConn();
 
 void _dbCreateUser();
 // void _BD_atualizarCad(char *, int);
-// void _BD_pegarUserInfo(char *, int);
+void _BD_pegarUserInfo(char *, int);
 // void _BD_registrarImc(char *, int);
 // void _BD_exibirImc(char *, int);
 // void _BD_delCad(char *, int);
