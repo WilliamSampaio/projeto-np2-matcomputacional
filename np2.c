@@ -166,7 +166,9 @@ void *_sdl2PlayWav(void *_wavFilename)
     SDL_PauseAudioDevice(deviceId, 0);
 
     // keep window open enough to hear the sound
-    SDL_Delay(10000 /* * 219*/);
+    while (playing)
+    {
+    }
 
     // clean up
     SDL_CloseAudioDevice(deviceId);
@@ -187,13 +189,13 @@ void _playSound()
         printf("\n ERROR: return code from pthread_create is %d \n", rc);
         exit(1);
     }
-    playing = 1;
+    playing = _True;
 }
 
 void _stopSound()
 {
-    printf("%d", pthread_cancel(soundPthreadId));
-    playing = 0;
+    pthread_cancel(soundPthreadId);
+    playing = _False;
 }
 
 void _exitNP2()
