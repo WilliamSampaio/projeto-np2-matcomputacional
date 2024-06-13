@@ -17,7 +17,8 @@ enum status
 {
     _Success,
     _Info,
-    _Danger
+    _Danger,
+    _Warning
 };
 
 enum genres
@@ -54,9 +55,11 @@ typedef struct
 void _msgSuccess(char *, char *);
 void _msgInfo(char *, char *);
 void _msgDanger(char *, char *);
+void _msgWarning(char *, char *);
 
 int _confirmYesNo(char *, char *, int);
 void _confirmOk(char *, char *, int);
+void _getData(void *, char *, char *, int);
 
 char *_dateTime();
 void _setPtBRLocale();
@@ -85,6 +88,7 @@ void _imcCad();
 
 // void load();
 
+void _writeConfig(FILE **);
 void _dbSetup();
 void _dbGetConfig(t_DBInfo *);
 void _dbUpdateConfig();

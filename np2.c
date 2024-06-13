@@ -42,6 +42,11 @@ void _msgDanger(char *_title, char *_message)
     printf("%s::: %s:%s %s%s\n", BHRED, _title, RED, _message, COLOR_RESET);
 }
 
+void _msgWarning(char *_title, char *_message)
+{
+    printf("%s::: %s:%s %s%s\n", BHYEL, _title, YEL, _message, COLOR_RESET);
+}
+
 int _confirmYesNo(char *_title, char *_message, int _status)
 {
     switch (_status)
@@ -54,6 +59,9 @@ int _confirmYesNo(char *_title, char *_message, int _status)
         break;
     case _Danger:
         _msgDanger(_title, _message);
+        break;
+    case _Warning:
+        _msgWarning(_title, _message);
         break;
     default:
         break;
@@ -92,12 +100,38 @@ void _confirmOk(char *_title, char *_message, int _status)
     case _Danger:
         _msgDanger(_title, _message);
         break;
+    case _Warning:
+        _msgWarning(_title, _message);
+        break;
     default:
         break;
     }
     printf("Press any key to continue...");
     setbuf(stdin, NULL);
     getchar();
+}
+
+void _getData(void *_var, char *_type, char *_message, int _status)
+{
+    switch (_status)
+    {
+    case _Success:
+        _msgSuccess(_message, "");
+        break;
+    case _Info:
+        _msgInfo(_message, "");
+        break;
+    case _Danger:
+        _msgDanger(_message, "");
+        break;
+    case _Warning:
+        _msgWarning(_message, "");
+        break;
+    default:
+        break;
+    }
+    printf("::: ");
+    scanf(_type, (char *)_var);
 }
 
 char *_dateTime()
@@ -1269,42 +1303,41 @@ void _imcCad()
 //     }
 // }
 
+void _writeConfig(FILE **_config)
+{
+    t_DBInfo db;
+
+    _getData(&db.host, "%s", "HOST IP", _Warning);
+    fprintf(*_config, "%s", db.host);
+    fprintf(*_config, "\n");
+
+    _getData(&db.user, "%s", "USUÁRIO", _Warning);
+    fprintf(*_config, "%s", db.user);
+    fprintf(*_config, "\n");
+
+    _msgDanger("** ATENÇÃO! **", "Caso não haja SENHA, digite null");
+    _getData(&db.pass, "%s", "SENHA", _Warning);
+    fprintf(*_config, "%s", db.pass);
+    fprintf(*_config, "\n");
+
+    _getData(&db.database, "%s", "BANCO DE DADOS", _Warning);
+    fprintf(*_config, "%s", db.database);
+    fprintf(*_config, "\n");
+
+    _getData(&db.port, "%d", "PORTA", _Warning);
+    fprintf(*_config, "%d", db.port);
+}
+
 void _dbSetup()
 {
     system(CMD_CLEAR);
 
-    t_DBInfo db;
     _configDb = fopen(fileDb, "r");
 
     if (_configDb == NULL)
     {
         _configDb = fopen(fileDb, "w+");
-
-        printf("-- HOST IP:  ");
-        scanf("%s", db.host);
-        fprintf(_configDb, "%s", db.host);
-        fprintf(_configDb, "\n");
-
-        printf("-- USUÁRIO:        ");
-        scanf("%s", db.user);
-        fprintf(_configDb, "%s", db.user);
-        fprintf(_configDb, "\n");
-
-        printf("! * Caso não haja SENHA, digite null\n");
-        printf("-- SENHA:          ");
-        scanf("%s", db.pass);
-        fprintf(_configDb, "%s", db.pass);
-        fprintf(_configDb, "\n");
-
-        printf("-- BANCO DE DADOS: ");
-        scanf("%s", db.database);
-        fprintf(_configDb, "%s", db.database);
-        fprintf(_configDb, "\n");
-
-        printf("-- PORTA:          ");
-        scanf("%d", &db.port);
-        fprintf(_configDb, "%d", db.port);
-
+        _writeConfig(&_configDb);
         fclose(_configDb);
     }
 }
@@ -1345,33 +1378,9 @@ void _dbUpdateConfig()
 {
     system(CMD_CLEAR);
 
-    t_DBInfo db;
     _configDb = fopen(fileDb, "w");
 
-    printf("-- HOST IP:        ");
-    scanf("%s", db.host);
-    fprintf(_configDb, "%s", db.host);
-    fprintf(_configDb, "\n");
-
-    printf("-- USUÁRIO:        ");
-    scanf("%s", db.user);
-    fprintf(_configDb, "%s", db.user);
-    fprintf(_configDb, "\n");
-
-    printf("! * Caso não haja SENHA, digite null\n");
-    printf("-- SENHA:          ");
-    scanf("%s", db.pass);
-    fprintf(_configDb, "%s", db.pass);
-    fprintf(_configDb, "\n");
-
-    printf("-- BANCO DE DADOS: ");
-    scanf("%s", db.database);
-    fprintf(_configDb, "%s", db.database);
-    fprintf(_configDb, "\n");
-
-    printf("-- PORTA:          ");
-    scanf("%d", &db.port);
-    fprintf(_configDb, "%d", db.port);
+    _writeConfig(&_configDb);
 
     if (ferror(_configDb) == 0)
     {
