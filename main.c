@@ -88,8 +88,6 @@ int main(int argc, char *argv[])
     // txtExit();
     // txtStarWarsRobos();
 
-    // printf("%d", _confirmMessageBox("teste", "teste"));
-
     _startNP2();
 
     pthread_exit(NULL);

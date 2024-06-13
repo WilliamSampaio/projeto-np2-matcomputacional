@@ -6,7 +6,19 @@
 
 #include <mysql/mysql.h>
 #include <stdio.h>
-#include <SDL2/SDL.h>
+
+enum boolean
+{
+    _False,
+    _True
+};
+
+enum status
+{
+    _Success,
+    _Info,
+    _Danger
+};
 
 enum genres
 {
@@ -39,10 +51,19 @@ typedef struct
     int password;
 } t_User;
 
-int _confirmMessageBox(char *, char *);
-void _okMessageBox(char *, char *);
-char *dataHora();
-void ptBrCaracteres();
+void _msgSuccess(char *, char *);
+void _msgInfo(char *, char *);
+void _msgDanger(char *, char *);
+
+int _confirmYesNo(char *, char *, int);
+void _confirmOk(char *, char *, int);
+
+char *_dateTime();
+void _setPtBRLocale();
+
+void *_sdl2PlayWav(void *);
+void _playSound();
+void _stopSound();
 
 // int _conStatus01(char *);
 // int _conStatus02();

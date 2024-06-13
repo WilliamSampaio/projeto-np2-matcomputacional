@@ -4,28 +4,90 @@
 #include <unistd.h>
 #endif
 
-#include <time.h>
-#include <stdio.h>
 #include <locale.h>
 #include <mysql/mysql.h>
-// #include <stdio.h>
-// #include <stdlib.h>
-// #include <string.h>
+#include <pthread.h>
+#include <SDL2/SDL.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+
 #include "np2.h"
 #include "np2txt.h"
+#include "np2ansi-color-codes.h"
 
-const SDL_MessageBoxColorScheme _colorScheme = {
-    {/* .colors (.r, .g, .b) */
-     /* [SDL_MESSAGEBOX_COLOR_BACKGROUND] */
-     {255, 255, 255},
-     /* [SDL_MESSAGEBOX_COLOR_TEXT] */
-     {0, 0, 0},
-     /* [SDL_MESSAGEBOX_COLOR_BUTTON_BORDER] */
-     {240, 240, 240},
-     /* [SDL_MESSAGEBOX_COLOR_BUTTON_BACKGROUND] */
-     {240, 240, 240},
-     /* [SDL_MESSAGEBOX_COLOR_BUTTON_SELECTED] */
-     {200, 200, 200}}};
+void _msgSuccess(char *_title, char *_message)
+{
+    printf("%s::: %s:%s %s%s\n", BHGRN, _title, GRN, _message, COLOR_RESET);
+}
+
+void _msgInfo(char *_title, char *_message)
+{
+    printf("%s::: %s:%s %s%s\n", BHBLU, _title, BLU, _message, COLOR_RESET);
+}
+
+void _msgDanger(char *_title, char *_message)
+{
+    printf("%s::: %s:%s %s%s\n", BHRED, _title, RED, _message, COLOR_RESET);
+}
+
+int _confirmYesNo(char *_title, char *_message, int _status)
+{
+    switch (_status)
+    {
+    case _Success:
+        _msgSuccess(_title, _message);
+        break;
+    case _Info:
+        _msgInfo(_title, _message);
+        break;
+    case _Danger:
+        _msgDanger(_title, _message);
+        break;
+    default:
+        break;
+    }
+    do
+    {
+        setbuf(stdin, NULL);
+        char op[3];
+        printf("Confirm (y/n): ");
+        scanf("%s", op);
+        if (toupper(op[0]) == 'Y')
+        {
+            return _True;
+        }
+        else if (toupper(op[0]) == 'N')
+        {
+            return _False;
+        }
+        else
+        {
+            _msgDanger("ERROR!", "Invalid option.");
+        }
+    } while (1);
+}
+
+void _confirmOk(char *_title, char *_message, int _status)
+{
+    switch (_status)
+    {
+    case _Success:
+        _msgSuccess(_title, _message);
+        break;
+    case _Info:
+        _msgInfo(_title, _message);
+        break;
+    case _Danger:
+        _msgDanger(_title, _message);
+        break;
+    default:
+        break;
+    }
+    printf("Press any key to continue...");
+    setbuf(stdin, NULL);
+    getchar();
+}
 
 const char *fileDb = "configdb";
 
@@ -34,68 +96,77 @@ FILE *_configDb;
 t_MySQLConn connObj;
 t_DBInfo dbConfig;
 
-int _confirmMessageBox(char *title, char *message)
-{
-    SDL_MessageBoxButtonData btns[] = {
-        {/* .flags, .buttonid, .text */ 0, 0, "Não"},
-        {SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT, 1, "Sim"},
-        {SDL_MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT, 2, "Cancelar"},
-    };
-    SDL_MessageBoxData messageboxdata = {
-        SDL_MESSAGEBOX_INFORMATION, /* .flags */
-        NULL,                       /* .window */
-        title,                      /* .title */
-        message,                    /* .message */
-        SDL_arraysize(btns),        /* .numbuttons */
-        btns,                       /* .buttons */
-        &_colorScheme               /* .colorScheme */
-    };
-    int buttonid;
-    if (SDL_ShowMessageBox(&messageboxdata, &buttonid) < 0)
-    {
-        SDL_Log("error displaying message box");
-        exit(1);
-    }
-    if (buttonid == -1)
-    {
-        SDL_Log("no selection");
-    }
-    return buttonid;
-}
+pthread_t soundPthreadId;
 
-void _okMessageBox(char *title, char *message)
-{
-    SDL_MessageBoxButtonData btns[] = {
-        {/* .flags, .buttonid, .text */ 0, 0, "OK"},
-    };
-    SDL_MessageBoxData messageboxdata = {
-        SDL_MESSAGEBOX_INFORMATION, /* .flags */
-        NULL,                       /* .window */
-        title,                      /* .title */
-        message,                    /* .message */
-        SDL_arraysize(btns),        /* .numbuttons */
-        btns,                       /* .buttons */
-        &_colorScheme               /* .colorScheme */
-    };
-    int buttonid;
-    SDL_ShowMessageBox(&messageboxdata, &buttonid);
-}
+int playing = _False;
 
-char *dataHora()
+char *_dateTime()
 {
     return __DATE__ " - " __TIME__;
 }
 
-void ptBrCaracteres()
+void _setPtBRLocale()
 {
     setlocale(LC_ALL, "Portuguese");
+}
+
+void *_sdl2PlayWav(void *_wavFilename)
+{
+    // pthread_t tid;
+    // tid = pthread_self();
+
+    SDL_Init(SDL_INIT_AUDIO);
+
+    // load WAV file
+    SDL_AudioSpec wavSpec;
+    Uint32 wavLength;
+    Uint8 *wavBuffer;
+
+    SDL_LoadWAV(_wavFilename, &wavSpec, &wavBuffer, &wavLength);
+
+    // open audio device
+    SDL_AudioDeviceID deviceId = SDL_OpenAudioDevice(NULL, 0, &wavSpec, NULL, 0);
+
+    // play audio
+    SDL_QueueAudio(deviceId, wavBuffer, wavLength);
+    SDL_PauseAudioDevice(deviceId, 0);
+
+    // keep window open enough to hear the sound
+    SDL_Delay(10000 /* * 219*/);
+
+    // clean up
+    SDL_CloseAudioDevice(deviceId);
+    SDL_FreeWAV(wavBuffer);
+    SDL_Quit();
+    pthread_exit(NULL); /* terminate the thread */
+}
+
+void _playSound()
+{
+    int rc;                        /* return value                           */
+    char *wav = "sound/teste.wav"; /* data passed to the new thread          */
+
+    /* create a new thread that will execute 'playSound' */
+    rc = pthread_create(&soundPthreadId, NULL, _sdl2PlayWav, (void *)wav);
+    if (rc) /* could not create thread */
+    {
+        printf("\n ERROR: return code from pthread_create is %d \n", rc);
+        exit(1);
+    }
+    playing = 1;
+}
+
+void _stopSound()
+{
+    printf("%d", pthread_cancel(soundPthreadId));
+    playing = 0;
 }
 
 // int _conStatus01(char *_database)
 // {
 
 //     char str[100];
-//     sprintf(str, "CONEX�O OK! BASE DE DADOS: %s\n(%s)", _database, dataHora());
+//     sprintf(str, "CONEX�O OK! BASE DE DADOS: %s\n(%s)", _database, _dateTime());
 //     // MessageBox(NULL, str, "Conex�o Status", MB_OK | MB_ICONINFORMATION);
 //     return 1;
 // }
@@ -128,9 +199,12 @@ void ptBrCaracteres()
 
 void _exitNP2()
 {
-    system(CMD_CLEAR);
-    txtExit();
-    exit(0);
+    if (_confirmYesNo("SAIR", "Você deseja realmente SAIR?", _Danger) == _True)
+    {
+        system(CMD_CLEAR);
+        txtExit();
+        exit(0);
+    }
 }
 
 void _mainMenu()
@@ -154,10 +228,7 @@ void _mainMenu()
     switch (op)
     {
     case 0:
-        if (_confirmMessageBox("SAIR", "Você deseja realmente SAIR?") == 1)
-        {
-            _exitNP2();
-        }
+        _exitNP2();
         _mainMenu();
         break;
     case 1:
@@ -172,12 +243,13 @@ void _mainMenu()
         break;
     case 4:
         _dbUpdateConfig();
+        _dbCheckConn();
         _mainMenu();
         break;
-    // case 9:
-    //     playPause();
-    //     _startNP2(0);
-    //     break;
+    case 9:
+        playing ? _stopSound() : _playSound();
+        _mainMenu();
+        break;
     default:
         _mainMenu();
         break;
@@ -198,10 +270,7 @@ void _starWarsRobos()
         switch (op)
         {
         case 0:
-            if (_confirmMessageBox("SAIR", "Você deseja realmente SAIR?") == 1)
-            {
-                _exitNP2();
-            }
+            _exitNP2();
             _starWarsRobos();
             break;
         case 1:
@@ -250,6 +319,7 @@ void _starWarsRobos()
 void _startNP2()
 {
     _dbCheckConn();
+    _playSound();
     _mainMenu(0);
 }
 
@@ -282,17 +352,14 @@ void _imcMenu()
     switch (op)
     {
     case 0:
-        if (_confirmMessageBox("SAIR", "Você deseja realmente SAIR?") == 1)
-        {
-            _exitNP2();
-        }
+        _exitNP2();
         _imcPrincipal();
         break;
     case 1:
         // _imcEntrar();
         break;
     case 2:
-        _imcCad();
+        // _imcCad();
         break;
     case 9:
         _mainMenu();
@@ -306,7 +373,7 @@ void _imcMenu()
 void _imcCad()
 {
     _imcTitulo();
-    _dbCreateUser();
+    // _dbCreateUser();
     _imcPrincipal();
 }
 
@@ -452,177 +519,177 @@ void _imcCad()
 //     }
 // }
 
-void _dbCreateUser()
-{
-    _dbSetup();
-    _dbGetConfig(&dbConfig);
+// void _dbCreateUser()
+// {
+//     _dbSetup();
+//     _dbGetConfig(&dbConfig);
 
-    t_User user;
+//     t_User user;
 
-    int cont, error, space = 0;
+//     int cont, error, space = 0;
 
-    do
-    {
-        fflush(stdin);
-        printf(">> DIGITE SEU NOME COMPLETO:\n");
-        fgets(user.nome);
-        strupr(user.nome);
-        for (cont = 0; cont < strlen(user.nome); cont++)
-        {
-            if (user.nome[cont] == ' ')
-            {
-                space = 1;
-            }
-        }
-        if (space == 0)
-        {
-            printf("ERRO! Nome inválido.\n");
-        }
-    } while (space == 0);
+//     do
+//     {
+//         fflush(stdin);
+//         printf(">> DIGITE SEU NOME COMPLETO:\n");
+//         fgets(user.nome);
+//         strupr(user.nome);
+//         for (cont = 0; cont < strlen(user.nome); cont++)
+//         {
+//             if (user.nome[cont] == ' ')
+//             {
+//                 space = 1;
+//             }
+//         }
+//         if (space == 0)
+//         {
+//             printf("ERRO! Nome inválido.\n");
+//         }
+//     } while (space == 0);
 
-    char sexo;
-    do
-    {
-        fflush(stdin);
-        printf(">> QUAL SEU SEXO (M / F):\n");
-        scanf("%c", &sexo);
+//     char sexo;
+//     do
+//     {
+//         fflush(stdin);
+//         printf(">> QUAL SEU SEXO (M / F):\n");
+//         scanf("%c", &sexo);
 
-        if (sexo != 'M' && sexo != 'F')
-        {
-            printf("ERRO! Alternativa inválida.\n");
-        }
-    } while (sexo != 'M' && sexo != 'F');
+//         if (sexo != 'M' && sexo != 'F')
+//         {
+//             printf("ERRO! Alternativa inválida.\n");
+//         }
+//     } while (sexo != 'M' && sexo != 'F');
 
-    do
-    {
-        int spc;
+//     do
+//     {
+//         int spc;
 
-        do
-        {
-            spc = 0;
-            do
-            {
-                fflush(stdin);
-                printf(">> NOME DE USUÁRIO (MAX - 20):\n");
-                fgets(user.login);
+//         do
+//         {
+//             spc = 0;
+//             do
+//             {
+//                 fflush(stdin);
+//                 printf(">> NOME DE USUÁRIO (MAX - 20):\n");
+//                 fgets(user.login);
 
-                if (strlen(user.login) > 20)
-                {
-                    printf("ERRO! Nome de usuário deve ter no maximo 20 caracteres.\n");
-                }
+//                 if (strlen(user.login) > 20)
+//                 {
+//                     printf("ERRO! Nome de usuário deve ter no maximo 20 caracteres.\n");
+//                 }
 
-            } while (strlen(user.login) > 20);
+//             } while (strlen(user.login) > 20);
 
-            for (cont = 0; cont < strlen(
-        }
-    } while (spc == 1);
-    if (_BD_validarUserName(user.login) == 1)
-    {
-        printf("Login j� utilizado por outro usu�rio :(\n");
-    }
-    else
-    {
-        if (_BD_validarUserName(user.login) == -1)
-        {
-            erro = 1;
-        }
-        else
-        {
-            if (_BD_validarUserName(user.login) == -2)
-            {
-                erro = 1;
-                _conStatus02();
-            }
-            else
-            {
-                if (_BD_validarUserName(user.login) == -3)
-                {
-                    erro = 1;
-                    _conStatus03();
-                }
-                else
-                {
-                    erro = 0;
-                }
-            }
-        }
-    }
-}
-while (erro != 0)
-    ;
+//             for (cont = 0; cont < strlen(
+//         }
+//     } while (spc == 1);
+//     if (_BD_validarUserName(user.login) == 1)
+//     {
+//         printf("Login j� utilizado por outro usu�rio :(\n");
+//     }
+//     else
+//     {
+//         if (_BD_validarUserName(user.login) == -1)
+//         {
+//             erro = 1;
+//         }
+//         else
+//         {
+//             if (_BD_validarUserName(user.login) == -2)
+//             {
+//                 erro = 1;
+//                 _conStatus02();
+//             }
+//             else
+//             {
+//                 if (_BD_validarUserName(user.login) == -3)
+//                 {
+//                     erro = 1;
+//                     _conStatus03();
+//                 }
+//                 else
+//                 {
+//                     erro = 0;
+//                 }
+//             }
+//         }
+//     }
+// }
+// while (erro != 0)
+//     ;
 
-int senhaR;
-do
-{
-    do
-    {
-        printf(">> DIGITE UMA SENHA (APENAS N�MEROS, MAX - 5):\n");
-        fflush(stdin);
-        scanf("%d", &user.senha);
-        if (user.senha > 99999)
-        {
-            printf("ERRO! Senha deve ter no maximo 5 digitos.\n");
-        }
-    } while (user.senha > 99999);
+// int senhaR;
+// do
+// {
+//     do
+//     {
+//         printf(">> DIGITE UMA SENHA (APENAS N�MEROS, MAX - 5):\n");
+//         fflush(stdin);
+//         scanf("%d", &user.senha);
+//         if (user.senha > 99999)
+//         {
+//             printf("ERRO! Senha deve ter no maximo 5 digitos.\n");
+//         }
+//     } while (user.senha > 99999);
 
-    printf(">> REPITA A SENHA DE ACESSO:\n");
-    fflush(stdin);
-    scanf("%d", &senhaR);
-    if (senhaR != user.senha)
-    {
-        printf("ERRO! Senhas n�o coincidem.\n");
-    }
-} while (senhaR != user.senha);
+//     printf(">> REPITA A SENHA DE ACESSO:\n");
+//     fflush(stdin);
+//     scanf("%d", &senhaR);
+//     if (senhaR != user.senha)
+//     {
+//         printf("ERRO! Senhas n�o coincidem.\n");
+//     }
+// } while (senhaR != user.senha);
 
-if (connObj.conn = mysql_init(0))
-{
-    if (connObj.conn = mysql_real_connect(connObj.conn, dbConfig.host, dbConfig.user, dbConfig.pass, dbConfig.database, dbConfig.port, NULL, 0))
-    {
-        char query[200];
-        sprintf(query, "INSERT INTO t_Users (nome, sexo, login, senha) VALUES ('%s','%c','%s','%d')", user.nome, user.sexo, user.login, user.senha);
-        connObj.qstate = mysql_query(connObj.conn, query);
-        if (!connObj.qstate)
-        {
-            printf("DADOS INSERIDOS COM SUCESSO!\n");
-        }
-        else
-        {
-            int op;
-            printf("ERRO! Algo deu errado...\n");
-            printf(" [1] - Tentar Novamente / [2] - voltar\n");
-            do
-            {
-                printf(" ");
-                scanf("%d", &op);
-                if (op == 1)
-                {
-                    system(CMD_CLEAR);
-                    _imcCad();
-                }
-                else
-                {
-                    if (op == 2)
-                    {
-                        _imcPrincipal();
-                    }
-                    else
-                    {
-                        printf("Op��o Inv�lida! :(");
-                    }
-                }
-            } while (op != 1 && op != 2);
-        }
-    }
-    else
-    {
-        _conStatus02();
-    }
-}
-else
-{
-    _conStatus03();
-}
-}
+// if (connObj.conn = mysql_init(0))
+// {
+//     if (connObj.conn = mysql_real_connect(connObj.conn, dbConfig.host, dbConfig.user, dbConfig.pass, dbConfig.database, dbConfig.port, NULL, 0))
+//     {
+//         char query[200];
+//         sprintf(query, "INSERT INTO t_Users (nome, sexo, login, senha) VALUES ('%s','%c','%s','%d')", user.nome, user.sexo, user.login, user.senha);
+//         connObj.qstate = mysql_query(connObj.conn, query);
+//         if (!connObj.qstate)
+//         {
+//             printf("DADOS INSERIDOS COM SUCESSO!\n");
+//         }
+//         else
+//         {
+//             int op;
+//             printf("ERRO! Algo deu errado...\n");
+//             printf(" [1] - Tentar Novamente / [2] - voltar\n");
+//             do
+//             {
+//                 printf(" ");
+//                 scanf("%d", &op);
+//                 if (op == 1)
+//                 {
+//                     system(CMD_CLEAR);
+//                     _imcCad();
+//                 }
+//                 else
+//                 {
+//                     if (op == 2)
+//                     {
+//                         _imcPrincipal();
+//                     }
+//                     else
+//                     {
+//                         printf("Op��o Inv�lida! :(");
+//                     }
+//                 }
+//             } while (op != 1 && op != 2);
+//         }
+//     }
+//     else
+//     {
+//         _conStatus02();
+//     }
+// }
+// else
+// {
+//     _conStatus03();
+// }
+// }
 
 // // ATUALIZAR CADASTRO DE USU�RIO NO BD
 // void _BD_atualizarCad(char login[20], int senha)
@@ -1108,7 +1175,7 @@ else
 //                 _conStatus00(connObj);
 //             }
 
-//             sprintf(query, "INSERT INTO registros (t_Users_idt_User,imc,datahora) VALUES (%s,%s,'%s')", _id, imc, dataHora());
+//             sprintf(query, "INSERT INTO registros (t_Users_idt_User,imc,datahora) VALUES (%s,%s,'%s')", _id, imc, _dateTime());
 //             connObj.qstate = mysql_query(connObj.conn, query);
 //             if (!connObj.qstate)
 //             {
@@ -1269,6 +1336,8 @@ else
 
 void _dbSetup()
 {
+    system(CMD_CLEAR);
+
     t_DBInfo db;
     _configDb = fopen(fileDb, "r");
 
@@ -1276,7 +1345,7 @@ void _dbSetup()
     {
         _configDb = fopen(fileDb, "w+");
 
-        printf("-- SERVIDOR / IP:  ");
+        printf("-- HOST IP:  ");
         scanf("%s", db.host);
         fprintf(_configDb, "%s", db.host);
         fprintf(_configDb, "\n");
@@ -1339,10 +1408,12 @@ void _dbGetConfig(t_DBInfo *_dbConfig)
 
 void _dbUpdateConfig()
 {
+    system(CMD_CLEAR);
+
     t_DBInfo db;
     _configDb = fopen(fileDb, "w");
 
-    printf("-- SERVIDOR / IP:  ");
+    printf("-- HOST IP:        ");
     scanf("%s", db.host);
     fprintf(_configDb, "%s", db.host);
     fprintf(_configDb, "\n");
@@ -1370,13 +1441,12 @@ void _dbUpdateConfig()
     if (ferror(_configDb) == 0)
     {
         fclose(_configDb);
-        printf(">> CONFIGURAÇÕES ALTERADAS COM SUCESSO!\n");
-        _dbGetConfig(&dbConfig);
+        _confirmOk(">> SUCESSO!", "CONFIGURAÇÕES ALTERADAS.", _Info);
     }
     else
     {
         fclose(_configDb);
-        printf(">> ERRO! NÃO FOI POSSIVEL ALTERAR AS CONFIGURAÇÕES.\n");
+        _confirmOk(">> ERRO!", "NÃO FOI POSSIVEL ALTERAR AS CONFIGURAÇÕES.", _Danger);
         sleep(1);
     }
 }
@@ -1399,19 +1469,19 @@ void _dbCheckConn()
                  0)))
         {
             char msg[132];
-            sprintf(msg, "CONEXÃO OK! BASE DE DADOS: %s\n(%s)", dbConfig.database, dataHora());
-            _okMessageBox("Sucesso!", msg);
+            sprintf(msg, "CONEXÃO OK! BASE DE DADOS: %s\n(%s)", dbConfig.database, _dateTime());
+            _confirmOk("Sucesso!", msg, _Info);
             mysql_close(connObj.conn);
         }
         else
         {
             char msg[206];
             sprintf(msg, "IMPOSSÍVEL ESTABELECER CONEXÃO!\n- Verifique se há conexão com a internet.\n- Verifique se as configurações de ACESSO ao BANCO DE DADOS estão CORRETAS.\n- Verifique se o MySQL está ativo (localhost).");
-            _okMessageBox("ERRO FATAL!", msg);
+            _confirmOk("ERRO FATAL!", msg, _Danger);
         }
     }
     else
     {
-        _okMessageBox("ERRO FATAL!", "NÃO foi possivel criar o OBJETO de conexão!");
+        _confirmOk("ERRO FATAL!", "NÃO foi possivel criar o OBJETO de conexão!", _Danger);
     }
 }
