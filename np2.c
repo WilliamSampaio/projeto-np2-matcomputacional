@@ -1001,7 +1001,6 @@ void _BD_pegarUserInfo(char *login, int senha)
             float contRegTotal = 0;
             float media;
             char ultimoReg[22];
-            char info[80];
 
             strcpy(ultimoReg, "NULL");
 
@@ -1043,12 +1042,12 @@ void _BD_pegarUserInfo(char *login, int senha)
             if (!connObj.qstate)
             {
                 connObj.res = mysql_store_result(connObj.conn);
-                printf("+-------------------------------------------------------+\n");
-                printf("|\tID\t|\tIMC\t|\tDATA HORA\t|\n");
-                printf("+-------------------------------------------------------+\n");
+                printf("+---------------------------------------------------------------+\n");
+                printf("|\tID\t|\tIMC\t|\tDATA HORA\t\t|\n");
+                printf("+---------------------------------------------------------------+\n");
                 while ((connObj.row = mysql_fetch_row(connObj.res)))
                 {
-                    printf("|\t%s\t|\tIMC\t|\tDATA HORA\t|\n",connObj.row[0]);
+                    printf("|\t%s\t|  %s\t|  %s\t|\n", connObj.row[0], connObj.row[2], connObj.row[3]);
                     contReg++;
                     contRegTotal += atof(connObj.row[2]);
                     strcpy(ultimoReg, connObj.row[3]);
@@ -1063,33 +1062,9 @@ void _BD_pegarUserInfo(char *login, int senha)
                     media = 0;
                 }
 
-                printf("     ");
-                for (i = 0; i < 70; i++)
-                {
-                    printf("-");
-                }
-                printf("\n");
-
-                char str[24];
-                sprintf(info, " %d - Registros | Média: %.2f | Último imc [", contReg, media);
-                sprintf(str, "%s]", ultimoReg);
-                strcat(info, str);
-
-                int tam = strlen(info);
-                tam = (80 - tam) / 2;
-                for (i = 0; i < tam; i++)
-                {
-                    printf(" ");
-                }
-                printf("%s", info);
-                printf("\n");
-
-                printf("     ");
-                for (i = 0; i < 70; i++)
-                {
-                    printf("-");
-                }
-                printf("\n");
+                printf("+---------------------------------------------------------------+\n");
+                printf("| Registros: %d\t| Média: %.2f\t| Último: %s|\n", contReg, media, ultimoReg);
+                printf("+---------------------------------------------------------------+\n");
             }
             else
             {
