@@ -13,6 +13,12 @@ enum boolean
     _True
 };
 
+enum dataTypes
+{
+    _String,
+    _Int
+};
+
 enum status
 {
     _Success,
@@ -46,21 +52,25 @@ typedef struct
 
 typedef struct
 {
-    int id;
+    unsigned int id;
     char *name;
     int genre;
     char *login;
-    int password;
+    unsigned int password;
 } t_User;
+
+void user_init(t_User *);
 
 void _msgSuccess(char *, char *);
 void _msgInfo(char *, char *);
 void _msgDanger(char *, char *);
 void _msgWarning(char *, char *);
+void _msg(char *, char *, int);
 
 int _confirmYesNo(char *, char *, int);
 void _confirmOk(char *, char *, int);
-void _getData(void *, char *, char *, int);
+
+void _getData(void *, int, char *, int);
 
 char *_dateTime();
 void _setPtBRLocale();
@@ -71,17 +81,20 @@ void _stopSound();
 
 void _exitNP2();
 
+void _logoutTxtOption();
+void _processLogout();
+
 void _mainMenu();
 void _starWarsRobos();
 void _startNP2();
 
-void _imcPrincipal();
-void _imcTitulo();
+void _imcTxtTitle();
+void _imcMenu();
 void _imcMenu();
 void _imcCad();
 
-void _imcEntrar();
-// void _imcRelatorio(char *, int);
+void _imcLogin();
+void _imcReport();
 // void _imcExibirImc(char *, int);
 // void _imcDelCadImc(char *, int);
 // void _imcUpdateCadImc(char *, int);

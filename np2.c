@@ -28,6 +28,15 @@ pthread_t soundPthreadId;
 
 int playing = _False;
 
+void user_init(t_User *_user)
+{
+    _user->id = 0;
+    _user->name = "";
+    _user->genre = 0;
+    _user->login = "";
+    _user->password = 0;
+}
+
 void _msgSuccess(char *_title, char *_message)
 {
     printf("%s::: %s:%s %s%s\n", BHGRN, _title, GRN, _message, COLOR_RESET);
@@ -48,7 +57,7 @@ void _msgWarning(char *_title, char *_message)
     printf("%s::: %s:%s %s%s\n", BHYEL, _title, YEL, _message, COLOR_RESET);
 }
 
-int _confirmYesNo(char *_title, char *_message, int _status)
+void _msg(char *_title, char *_message, int _status)
 {
     switch (_status)
     {
@@ -64,9 +73,12 @@ int _confirmYesNo(char *_title, char *_message, int _status)
     case _Warning:
         _msgWarning(_title, _message);
         break;
-    default:
-        break;
     }
+}
+
+int _confirmYesNo(char *_title, char *_message, int _status)
+{
+    _msg(_title, _message, _status);
     do
     {
         setbuf(stdin, NULL);
@@ -90,49 +102,28 @@ int _confirmYesNo(char *_title, char *_message, int _status)
 
 void _confirmOk(char *_title, char *_message, int _status)
 {
-    switch (_status)
-    {
-    case _Success:
-        _msgSuccess(_title, _message);
-        break;
-    case _Info:
-        _msgInfo(_title, _message);
-        break;
-    case _Danger:
-        _msgDanger(_title, _message);
-        break;
-    case _Warning:
-        _msgWarning(_title, _message);
-        break;
-    default:
-        break;
-    }
+    _msg(_title, _message, _status);
     printf("Press any key to continue...");
     setbuf(stdin, NULL);
     getchar();
 }
 
-void _getData(void *_var, char *_type, char *_message, int _status)
+void _getData(void *_var, int _type, char *_message, int _status)
 {
-    switch (_status)
+    _msg(_message, "", _status);
+    printf("::: ");
+    switch (_type)
     {
-    case _Success:
-        _msgSuccess(_message, "");
+    case _String:
+        scanf("%s", (char *)_var);
         break;
-    case _Info:
-        _msgInfo(_message, "");
-        break;
-    case _Danger:
-        _msgDanger(_message, "");
-        break;
-    case _Warning:
-        _msgWarning(_message, "");
+    case _Int:
+        scanf("%d", (int *)_var);
         break;
     default:
+        _msgDanger("ERRO", "Tipo de dado inválido.");
         break;
     }
-    printf("::: ");
-    scanf(_type, (char *)_var);
 }
 
 char *_dateTime()
@@ -204,28 +195,53 @@ void _exitNP2()
     if (_confirmYesNo("SAIR", "Você deseja realmente SAIR?", _Danger) == _True)
     {
         system(CMD_CLEAR);
-        txtExit();
+        // txtExit();
         exit(0);
+    }
+}
+
+void _logoutTxtOption()
+{
+    if (user.id != 0)
+    {
+        char label[29];
+        sprintf(label, "LOGOUT (%s%s%s)", BHYEL, user.login, COLOR_RESET);
+        _msgSuccess("[10]", label);
+        printf("\n");
+    }
+}
+
+void _processLogout()
+{
+    if (user.id != 0 && _confirmYesNo("LOGOUT", "Finalizar sessão?", _Warning))
+    {
+        user_init(&user);
     }
 }
 
 void _mainMenu()
 {
     system(CMD_CLEAR);
-    txtTeam();
     printf("\n");
-    printf("\tMENU PRINCÍPAL:\n\n");
-    printf("\t[1] - ROBÔS STAR WARS\n");
-    printf("\t[2] - IMC COM MySQL\n");
+    _msgSuccess("MENU PRINCÍPAL", "\n");
+    _msgSuccess("[1]", "ROBÔS STAR WARS");
+    _msgSuccess("[2]", "IMC COM MySQL");
     printf("\n");
-    printf("\t[3] - CHECAR CONEXÃO COM O BD\n");
-    printf("\t[4] - ALTERAR CONFIG DE ACESSO AO BD\n\n");
-    printf("\t[9] - PLAY / STOP MUSICA\n");
-    printf("\t[0] - SAIR\n\n");
-    printf("\t::: ");
+    _msgSuccess("[3]", "CHECAR CONEXÃO COM O BD");
+    _msgSuccess("[4]", "ALTERAR CONFIG DE ACESSO AO BD");
+    printf("\n");
+    _msgSuccess("[5]", "PLAY / STOP MUSICA");
+    printf("\n");
+    _msgSuccess("[9]", "SOBRE");
+
+    _logoutTxtOption();
+
+    _msgSuccess("[0]", "SAIR");
+    printf("\n");
 
     int op;
-    scanf("%d", &op);
+    _getData(&op, _Int, "Digite o número da opção", _Success);
+    printf("\n");
 
     switch (op)
     {
@@ -237,7 +253,7 @@ void _mainMenu()
         _starWarsRobos();
         break;
     case 2:
-        _imcPrincipal();
+        _imcMenu();
         break;
     case 3:
         _dbCheckConn();
@@ -248,11 +264,22 @@ void _mainMenu()
         _dbCheckConn();
         _mainMenu();
         break;
-    case 9:
+    case 5:
         playing ? _stopSound() : _playSound();
         _mainMenu();
         break;
+    case 9:
+        system(CMD_CLEAR);
+        txtTeam();
+        _confirmOk("Data/Hora", _dateTime(), _Danger);
+        _mainMenu();
+        break;
+    case 10:
+        _processLogout();
+        _mainMenu();
+        break;
     default:
+        _confirmOk("Erro", "Opção inválida.", _Danger);
         _mainMenu();
         break;
     }
@@ -262,13 +289,20 @@ void _starWarsRobos()
 {
     system(CMD_CLEAR);
     txtStarWarsRobos();
+
     int op;
     do
     {
         printf("\n");
-        printf("[1] - RESETAR | [2] - MENU PRINCIPAL | [0] - SAIR\n");
+        _msgSuccess("[1]", "RESETAR");
+        _msgSuccess("[2]", "MENU PRINCIPAL");
+        printf("\n");
+        _msgSuccess("[0]", "SAIR");
+        printf("\n");
 
-        scanf("%d", &op);
+        _getData(&op, _Int, "Digite o número da opção", _Success);
+        printf("\n");
+
         switch (op)
         {
         case 0:
@@ -279,9 +313,10 @@ void _starWarsRobos()
             _starWarsRobos();
             break;
         case 2:
-            _startNP2(0);
+            _mainMenu();
             break;
         default:
+            _confirmOk("Erro", "Opção inválida.", _Danger);
             _starWarsRobos();
             break;
         }
@@ -290,18 +325,12 @@ void _starWarsRobos()
 
 void _startNP2()
 {
-    _dbCheckConn();
+    user_init(&user);
     _playSound();
-    _mainMenu(0);
+    _mainMenu();
 }
 
-void _imcPrincipal()
-{
-    _imcTitulo();
-    _imcMenu();
-}
-
-void _imcTitulo()
+void _imcTxtTitle()
 {
     system(CMD_CLEAR);
     printf("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::\n");
@@ -311,24 +340,30 @@ void _imcTitulo()
 
 void _imcMenu()
 {
-    printf("\t::: [1] ENTRAR\n");
-    printf("\t::: [2] CADASTRE-SE\n");
+    _imcTxtTitle();
+    _msgSuccess("[1]", "ENTRAR");
+    _msgSuccess("[2]", "CADASTRE-SE");
     printf("\n");
-    printf("\t::: [9] VOLTAR AO MENU PRINCÍPAL\n");
-    printf("\t::: [0] SAIR\n");
-    printf("\n\t");
+    _msgSuccess("[9]", "VOLTAR AO MENU PRINCÍPAL");
+    printf("\n");
+
+    _logoutTxtOption();
+
+    _msgSuccess("[0]", "SAIR");
+    printf("\n");
 
     int op;
-    scanf("%d", &op);
+    _getData(&op, _Int, "Digite o número da opção", _Success);
+    printf("\n");
 
     switch (op)
     {
     case 0:
         _exitNP2();
-        _imcPrincipal();
+        _imcMenu();
         break;
     case 1:
-        _imcEntrar();
+        _imcLogin();
         break;
     case 2:
         // _imcCad();
@@ -336,48 +371,47 @@ void _imcMenu()
     case 9:
         _mainMenu();
         break;
+    case 10:
+        _processLogout();
+        _imcMenu();
+        break;
     default:
-        _imcPrincipal();
+        _confirmOk("Erro", "Opção inválida.", _Danger);
+        _imcMenu();
         break;
     }
 }
 
 void _imcCad()
 {
-    _imcTitulo();
+    _imcTxtTitle();
     // _dbCreateUser();
-    _imcPrincipal();
+    _imcMenu();
 }
 
-void _imcEntrar()
+void _imcLogin()
 {
     char login[20];
     int senha;
 
-    _imcTitulo();
+    _imcTxtTitle();
 
-    _msgWarning("LOGIN", "");
-    scanf("%s", login);
-
-    _msgWarning("SENHA", "");
-    scanf("%d", &senha);
+    _getData(&login, _String, "LOGIN", _Warning);
+    _getData(&senha, _Int, "SENHA", _Warning);
 
     if (_dbValidateLogin(&user, login, senha) == _False)
     {
         if (_confirmYesNo("Autenticação Falhou!", "Tentar novamente?", _Danger))
         {
-            system(CMD_CLEAR);
-            return _imcEntrar();
+            return _imcLogin();
         }
-
-        return _imcPrincipal();
+        return _imcMenu();
     }
-
     return _imcSession();
 }
 
 // PEGAR AS INFORMA��ES DO t_User LOGADO
-void _imcRelatorio(char login[20], int senha)
+void _imcReport()
 {
     _BD_pegarUserInfo();
 }
@@ -398,24 +432,31 @@ void _imcExibirImc()
 void _imcUpdateCadImc()
 {
     system(CMD_CLEAR);
-    _imcTitulo();
+    _imcTxtTitle();
     _BD_atualizarCad();
 }
 
 void _imcSession()
 {
-    _imcTitulo();
-    _imcRelatorio(user.login, user.password);
-    printf("\n\t[1]\tREGISTRAR NOVO IMC.\n");
-    printf("\t[2]\tEXIBIR TODOS OS REGISTROS\n\n");
-    printf("\t[4]\tALTERAR DADOS PESSOAIS\n\n");
-    printf("\t[9]\tVOLTAR AO MENU PRINCÍPAL\n");
-    printf("\t[0]\tSAIR\n\n");
-    printf("\t[-99]\tAPAGAR CADASTRO\n\n");
-    printf("\t::: ");
+    _imcTxtTitle();
+    // _imcReport();
+    _msgSuccess("[1]", "REGISTRAR NOVO IMC");
+    _msgSuccess("[2]", "EXIBIR TODOS OS REGISTROS");
+    printf("\n");
+    _msgSuccess("[4]", "ALTERAR DADOS PESSOAIS");
+    printf("\n");
+    _msgSuccess("[9]", "VOLTAR AO MENU PRINCÍPAL");
+    _msgSuccess("[0]", "SAIR");
+    printf("\n");
+
+    _logoutTxtOption();
+
+    _msgSuccess("[-99]", "APAGAR CADASTRO");
+    printf("\n");
 
     int op;
-    scanf("%d", &op);
+    _getData(&op, _Int, "Digite o número da opção", _Success);
+    printf("\n");
 
     switch (op)
     {
@@ -424,14 +465,14 @@ void _imcSession()
         break;
     case 1:
         system(CMD_CLEAR);
-        _imcTitulo();
+        _imcTxtTitle();
         _BD_registrarImc();
         _confirmOk("Data/Hora", _dateTime(), _Danger);
         _imcSession();
         break;
     case 2:
         system(CMD_CLEAR);
-        _imcTitulo();
+        _imcTxtTitle();
         _imcExibirImc();
         _confirmOk("Data/Hora", _dateTime(), _Danger);
         _imcSession();
@@ -442,11 +483,15 @@ void _imcSession()
         _imcSession();
         break;
     case 9:
-        _imcPrincipal();
+        _imcMenu();
+        break;
+    case 10:
+        _processLogout();
+        _imcMenu();
         break;
     case -99:
         system(CMD_CLEAR);
-        _imcTitulo();
+        _imcTxtTitle();
         // _BD_delCad(login, senha);
         _confirmOk("Data/Hora", _dateTime(), _Danger);
         _imcSession();
@@ -609,7 +654,7 @@ void _imcSession()
 //                 {
 //                     if (op == 2)
 //                     {
-//                         _imcPrincipal();
+//                         _imcMenu();
 //                     }
 //                     else
 //                     {
@@ -1162,24 +1207,24 @@ void _writeConfig(FILE **_config)
 {
     t_DBInfo db;
 
-    _getData(&db.host, "%s", "HOST IP", _Warning);
+    _getData(&db.host, _String, "HOST IP", _Warning);
     fprintf(*_config, "%s", db.host);
     fprintf(*_config, "\n");
 
-    _getData(&db.user, "%s", "USUÁRIO", _Warning);
+    _getData(&db.user, _String, "USUÁRIO", _Warning);
     fprintf(*_config, "%s", db.user);
     fprintf(*_config, "\n");
 
     _msgDanger("** ATENÇÃO! **", "Caso não haja SENHA, digite null");
-    _getData(&db.pass, "%s", "SENHA", _Warning);
+    _getData(&db.pass, _String, "SENHA", _Warning);
     fprintf(*_config, "%s", db.pass);
     fprintf(*_config, "\n");
 
-    _getData(&db.database, "%s", "BANCO DE DADOS", _Warning);
+    _getData(&db.database, _String, "BANCO DE DADOS", _Warning);
     fprintf(*_config, "%s", db.database);
     fprintf(*_config, "\n");
 
-    _getData(&db.port, "%d", "PORTA", _Warning);
+    _getData(&db.port, _Int, "PORTA", _Warning);
     fprintf(*_config, "%d", db.port);
 }
 
