@@ -996,7 +996,7 @@ void _BD_pegarUserInfo(char *login, int senha)
         {
 
             int id;
-            int i;
+            // int i;
             int contReg = 0;
             float contRegTotal = 0;
             float media;
@@ -1010,25 +1010,11 @@ void _BD_pegarUserInfo(char *login, int senha)
             if (!connObj.qstate)
             {
                 connObj.res = mysql_store_result(connObj.conn);
+                printf("+-----------------------------------------------------------------------+\n");
                 while ((connObj.row = mysql_fetch_row(connObj.res)))
                 {
                     id = atoi(connObj.row[0]);
-                    int charCont = (80 - (10 + strlen(connObj.row[1]))) / 2;
-                    for (i = 0; i < charCont; i++)
-                    {
-                        printf(" ");
-                    }
-                    printf("BEM-VIND");
-                    if (strcmp(connObj.row[2], "M") == 0)
-                    {
-                        printf("O");
-                    }
-                    else
-                    {
-                        printf("A");
-                    }
-                    printf(" %s", connObj.row[1]);
-                    printf("\n");
+                    printf("| %sNOME: %s%s%s\t\t\t\t\t\t\t|\n", BHCYN, BHYEL, connObj.row[1], COLOR_RESET);
                 }
             }
             else
@@ -1042,12 +1028,21 @@ void _BD_pegarUserInfo(char *login, int senha)
             if (!connObj.qstate)
             {
                 connObj.res = mysql_store_result(connObj.conn);
-                printf("+---------------------------------------------------------------+\n");
-                printf("|\tID\t|\tIMC\t|\tDATA HORA\t\t|\n");
-                printf("+---------------------------------------------------------------+\n");
+                printf("+-----------------------------------------------------------------------+\n");
+                printf("|%s\tID\t%s|%s\tIMC\t%s|%s\t\tDATA HORA\t\t%s|\n", BHCYN, COLOR_RESET, BHCYN, COLOR_RESET, BHCYN, COLOR_RESET);
+                printf("+-----------------------------------------------------------------------+\n");
                 while ((connObj.row = mysql_fetch_row(connObj.res)))
                 {
-                    printf("|\t%s\t|  %s\t|  %s\t|\n", connObj.row[0], connObj.row[2], connObj.row[3]);
+                    printf("|%s\t%s\t%s| %s%s\t\t%s|\t%s%s\t\t%s|\n",
+                           BHYEL,
+                           connObj.row[0],
+                           COLOR_RESET,
+                           BHYEL,
+                           connObj.row[2],
+                           COLOR_RESET,
+                           BHYEL,
+                           connObj.row[3],
+                           COLOR_RESET);
                     contReg++;
                     contRegTotal += atof(connObj.row[2]);
                     strcpy(ultimoReg, connObj.row[3]);
@@ -1062,9 +1057,21 @@ void _BD_pegarUserInfo(char *login, int senha)
                     media = 0;
                 }
 
-                printf("+---------------------------------------------------------------+\n");
-                printf("| Registros: %d\t| Média: %.2f\t| Último: %s|\n", contReg, media, ultimoReg);
-                printf("+---------------------------------------------------------------+\n");
+                printf("+-----------------------------------------------------------------------+\n");
+                printf("| %sRegistros: %s%d%s\t| %sMédia: %s%.2f%s \t| %sÚltimo: %s%s%s\t|\n",
+                       BHCYN,
+                       BHYEL,
+                       contReg,
+                       COLOR_RESET,
+                       BHCYN,
+                       BHYEL,
+                       media,
+                       COLOR_RESET,
+                       BHCYN,
+                       BHYEL,
+                       ultimoReg,
+                       COLOR_RESET);
+                printf("+-----------------------------------------------------------------------+\n");
             }
             else
             {
