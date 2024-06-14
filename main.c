@@ -4,8 +4,7 @@
 
 int main(int argc, char *argv[])
 {
-    _BD_pegarUserInfo("bonner", 123);
-    // _startNP2();
-    // pthread_exit(NULL);
+    _startNP2();
+    pthread_exit(NULL);
     return 0;
 }

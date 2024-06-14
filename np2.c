@@ -22,6 +22,7 @@ FILE *_configDb;
 
 t_MySQLConn connObj;
 t_DBInfo dbConfig;
+t_User user;
 
 pthread_t soundPthreadId;
 
@@ -179,8 +180,8 @@ void *_sdl2PlayWav(void *_wavFilename)
 
 void _playSound()
 {
-    int rc;                        /* return value                           */
-    char *wav = "sound/teste.wav"; /* data passed to the new thread          */
+    int rc;                                               /* return value                           */
+    char *wav = "sound/Blue (Da Ba Dee) - Eiffel 65.wav"; /* data passed to the new thread          */
 
     /* create a new thread that will execute 'playSound' */
     rc = pthread_create(&soundPthreadId, NULL, _sdl2PlayWav, (void *)wav);
@@ -221,7 +222,7 @@ void _mainMenu()
     printf("\t[4] - ALTERAR CONFIG DE ACESSO AO BD\n\n");
     printf("\t[9] - PLAY / STOP MUSICA\n");
     printf("\t[0] - SAIR\n\n");
-    printf("\t -> ");
+    printf("\t::: ");
 
     int op;
     scanf("%d", &op);
@@ -303,18 +304,18 @@ void _imcPrincipal()
 void _imcTitulo()
 {
     system(CMD_CLEAR);
-    printf("################################################################################\n");
-    printf("#                 SISTEMA - INDICE DE MASSA CORPORAL (com MySQL)               #\n");
-    printf("################################################################################\n\n");
+    printf("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::\n");
+    printf(":: : : : : : : : SISTEMA - INDICE DE MASSA CORPORAL (com MySQL) : : : : : : : ::\n");
+    printf("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::\n\n");
 }
 
 void _imcMenu()
 {
-    printf("\t- [1]ENTRAR\n");
-    printf("\t- [2]CADASTRE-SE\n");
+    printf("\t::: [1] ENTRAR\n");
+    printf("\t::: [2] CADASTRE-SE\n");
     printf("\n");
-    printf("\t- [9]VOLTAR AO MENU PRINCÍPAL\n");
-    printf("\t- [0]SAIR\n");
+    printf("\t::: [9] VOLTAR AO MENU PRINCÍPAL\n");
+    printf("\t::: [0] SAIR\n");
     printf("\n\t");
 
     int op;
@@ -327,7 +328,7 @@ void _imcMenu()
         _imcPrincipal();
         break;
     case 1:
-        // _imcEntrar();
+        _imcEntrar();
         break;
     case 2:
         // _imcCad();
@@ -348,62 +349,44 @@ void _imcCad()
     _imcPrincipal();
 }
 
-// // LOGIN DE ACESSO AO SISTEMA
-// void _imcEntrar()
-// {
+void _imcEntrar()
+{
+    char login[20];
+    int senha;
 
-//     char login[20];
-//     int senha;
-//     _imcTitulo();
-//     printf(" - LOGIN: ");
-//     scanf("%s", login);
-//     printf(" - SENHA: ");
-//     scanf("%d", &senha);
-//     if (_BD_validarLogin(login, senha) == 1)
-//     {
-//         _imcSessao(login, senha);
-//     }
-//     else
-//     {
-//         int op;
-//         printf(" LOGIN OU SENHA INV�LIDO!\n");
-//         printf(" [1] - Tentar Novamente / [2] - voltar\n");
-//         do
-//         {
-//             scanf("%d", &op);
-//             if (op == 1)
-//             {
-//                 system(CMD_CLEAR);
-//                 _imcEntrar();
-//             }
-//             else
-//             {
-//                 if (op == 2)
-//                 {
-//                     _imcPrincipal();
-//                 }
-//                 else
-//                 {
-//                     printf("Op��o Inv�lida! :(\n");
-//                 }
-//             }
-//         } while (op != 1 && op != 2);
-//     }
-// }
+    _imcTitulo();
 
-// // PEGAR AS INFORMA��ES DO t_User LOGADO
-// void _imcRelatorio(char login[20], int senha)
-// {
+    _msgWarning("LOGIN", "");
+    scanf("%s", login);
 
-//     _BD_pegarUserInfo(login, senha);
-// }
+    _msgWarning("SENHA", "");
+    scanf("%d", &senha);
 
-// // EXIBE OS REGISTROS DE IMC
-// void _imcExibirImc(char login[20], int senha)
-// {
+    if (_dbValidateLogin(&user, login, senha) == _False)
+    {
+        if (_confirmYesNo("Autenticação Falhou!", "Tentar novamente?", _Danger))
+        {
+            system(CMD_CLEAR);
+            return _imcEntrar();
+        }
 
-//     _BD_exibirImc(login, senha);
-// }
+        return _imcPrincipal();
+    }
+
+    return _imcSession();
+}
+
+// PEGAR AS INFORMA��ES DO t_User LOGADO
+void _imcRelatorio(char login[20], int senha)
+{
+    _BD_pegarUserInfo();
+}
+
+void _imcExibirImc()
+{
+
+    _BD_exibirImc();
+}
 
 // // DELETA CADASTRO DE USU�RIO
 // void _imcDelCadImc(char login[20], int senha)
@@ -412,83 +395,68 @@ void _imcCad()
 //     _BD_delCad(login, senha);
 // }
 
-// // ATUALIZA O CADASTRO DO USU�RIO
-// void _imcUpdateCadImc(char login[20], int senha)
-// {
+void _imcUpdateCadImc()
+{
+    system(CMD_CLEAR);
+    _imcTitulo();
+    _BD_atualizarCad();
+}
 
-//     system(CMD_CLEAR);
-//     _imcTitulo();
-//     _BD_atualizarCad(login, senha);
-// }
+void _imcSession()
+{
+    _imcTitulo();
+    _imcRelatorio(user.login, user.password);
+    printf("\n\t[1]\tREGISTRAR NOVO IMC.\n");
+    printf("\t[2]\tEXIBIR TODOS OS REGISTROS\n\n");
+    printf("\t[4]\tALTERAR DADOS PESSOAIS\n\n");
+    printf("\t[9]\tVOLTAR AO MENU PRINCÍPAL\n");
+    printf("\t[0]\tSAIR\n\n");
+    printf("\t[-99]\tAPAGAR CADASTRO\n\n");
+    printf("\t::: ");
 
-// // ABRE O MENU PRINC�PAL DO USU�RIO
-// void _imcSessao(char login[20], int senha)
-// {
-//     int i;
-//     _imcTitulo();
-//     printf("\n");
-//     _imcRelatorio(login, senha);
-//     for (i = 0; i < 80; i++)
-//     {
-//         printf("_");
-//     }
-//     printf("\t[1] - REGISTRAR NOVO IMC.\n");
-//     printf("\t[2] - EXIBIR TODOS OS REGISTROS\n\n");
-//     printf("\t[4] - ALTERAR DADOS PESSOAIS\n\n");
-//     printf("\t[9] - VOLTAR AO MENU PRINC�PAL\n");
-//     printf("\t[0] - SAIR\n\n");
-//     printf("\t[-99] - APAGAR CADASTRO\n\n");
-//     printf("\t::");
-//     int op;
-//     scanf("%d", &op);
+    int op;
+    scanf("%d", &op);
 
-//     switch (op)
-//     {
-//     case 0:
-//         if (MessageBox(NULL, "Voc� deseja realmente SAIR?", "SAIR", MB_YESNO | MB_ICONQUESTION) == 6)
-//         {
-//             sair();
-//         }
-//         else
-//         {
-//             _imcSessao(login, senha);
-//         }
-//         break;
-//     case 1:
-//         system(CMD_CLEAR);
-//         _imcTitulo();
-//         _BD_registrarImc(login, senha);
-//         system("pause");
-//         _imcSessao(login, senha);
-//         break;
-//     case 2:
-//         system(CMD_CLEAR);
-//         _imcTitulo();
-//         _imcExibirImc(login, senha);
-//         system("pause");
-//         _imcSessao(login, senha);
-//         break;
-//     case 4:
-//         _imcUpdateCadImc(login, senha);
-//         system("pause");
-//         _imcPrincipal();
-//         break;
-//     case 9:
-//         _imcPrincipal();
-//         break;
-//     case -99:
-//         system(CMD_CLEAR);
-//         _imcTitulo();
-//         _BD_delCad(login, senha);
-//         system("pause");
-//         _imcPrincipal();
-//         break;
-//     default:
-//         MessageBox(NULL, "Op��o inv�lida!", "ERRO!", MB_OK | MB_ICONERROR);
-//         _imcSessao(login, senha);
-//         break;
-//     }
-// }
+    switch (op)
+    {
+    case 0:
+        _exitNP2();
+        break;
+    case 1:
+        system(CMD_CLEAR);
+        _imcTitulo();
+        _BD_registrarImc();
+        _confirmOk("Data/Hora", _dateTime(), _Danger);
+        _imcSession();
+        break;
+    case 2:
+        system(CMD_CLEAR);
+        _imcTitulo();
+        _imcExibirImc();
+        _confirmOk("Data/Hora", _dateTime(), _Danger);
+        _imcSession();
+        break;
+    case 4:
+        _imcUpdateCadImc();
+        _confirmOk("Data/Hora", _dateTime(), _Danger);
+        _imcSession();
+        break;
+    case 9:
+        _imcPrincipal();
+        break;
+    case -99:
+        system(CMD_CLEAR);
+        _imcTitulo();
+        // _BD_delCad(login, senha);
+        _confirmOk("Data/Hora", _dateTime(), _Danger);
+        _imcSession();
+        break;
+    default:
+        _confirmOk("Erro", "Opção inválida.", _Danger);
+        _imcSession();
+        break;
+    }
+}
 
 // void _dbCreateUser()
 // {
@@ -662,227 +630,187 @@ void _imcCad()
 // }
 // }
 
-// // ATUALIZAR CADASTRO DE USU�RIO NO BD
-// void _BD_atualizarCad(char login[20], int senha)
-// {
+void _BD_atualizarCad()
+{
+    _dbSetup();
+    _dbGetConfig(&dbConfig);
 
-//     _dbSetup();
-//     _dbGetConfig(&dbConfig);
+    if (!_dbInit() || !_dbConnect(&dbConfig))
+    {
+        return;
+    }
 
-//     t_User update;
-//     int cont, op, erro, senhaR;
-//     int espaco = 0;
-//     char query[200];
+    // char query[200];
 
-//     sprintf(query, "select nome,sexo,login,senha from t_Users where login = '%s' and senha = '%d'", login, senha);
+    printf("::: %sATUALIZAR...%s\n\n", BHGRN, COLOR_RESET);
+    _msgInfo("[1] NOME", user.name);
+    _msgInfo("[2] SEXO", user.genre == M ? "Masculino" : "Feminino");
+    _msgInfo("[3] LOGIN", user.login);
+    _msgInfo("[4] SENHA", "***");
+    printf("\n::: %s[0] VOLTAR%s\n\n::: ", BHGRN, COLOR_RESET);
 
-//     if (connObj.conn = mysql_init(0))
-//     {
-//         if (connObj.conn = mysql_real_connect(connObj.conn, dbConfig.host, dbConfig.user, dbConfig.pass, dbConfig.database, dbConfig.port, NULL, 0))
-//         {
-//             connObj.qstate = mysql_query(connObj.conn, query);
-//             if (!connObj.qstate)
-//             {
+    int op;
+    scanf("%d", &op);
 
-//                 connObj.res = mysql_store_result(connObj.conn);
-//                 while (connObj.row = mysql_fetch_row(connObj.res))
-//                 {
-//                     strcpy(update.nome, connObj.row[0]);
-//                     if (connObj.row[1] == "M")
-//                     {
-//                         update.sexo = 'M';
-//                     }
-//                     else
-//                     {
-//                         update.sexo = 'F';
-//                     }
-//                     strcpy(update.login, connObj.row[2]);
-//                     update.senha = atoi(connObj.row[3]);
-//                 }
-//             }
-//             else
-//             {
-//                 _conStatus00(connObj);
-//                 mysql_close(connObj.conn);
-//             }
-//         }
-//         else
-//         {
-//             _conStatus02();
-//         }
-//     }
-//     else
-//     {
-//         _conStatus03();
-//     }
+    switch (op)
+    {
+    case 0:
+        _imcSession();
+        break;
+    // case 1:
+    //     do
+    //     {
+    //         fflush(stdin);
+    //         printf(">> DIGITE SEU NOME COMPLETO:\n");
+    //         fgets(update.nome);
+    //         strupr(update.nome);
+    //         for (cont = 0; cont < strlen(update.nome); cont++)
+    //         {
+    //             if (update.nome[cont] == ' ')
+    //             {
+    //                 espaco = 1;
+    //             }
+    //         }
+    //         if (espaco == 0)
+    //         {
+    //             printf("ERRO! Nome inv�lido.\n");
+    //         }
+    //     } while (espaco == 0);
+    //     break;
+    // case 2:
+    //     do
+    //     {
+    //         char sexo;
+    //         fflush(stdin);
+    //         printf(">> QUAL SEU SEXO (M / F):\n");
+    //         scanf("%c", &sexo);
+    //         update.sexo = toupper(sexo);
+    //         if (update.sexo != 'M' && update.sexo != 'F')
+    //         {
+    //             printf("ERRO! Alternativa inv�lida.\n");
+    //         }
+    //     } while (update.sexo != 'M' && update.sexo != 'F');
+    //     break;
+    // case 3:
 
-//     printf(">> ATUALIZAR...\n\n");
-//     printf(">> [1] - NOME   \n");
-//     printf(">> [2] - SEXO   \n");
-//     printf(">> [3] - LOGIN  \n");
-//     printf(">> [4] - SENHA  \n\n");
-//     printf(">> [0] - VOLTAR  \n\n::");
-//     scanf("%d", &op);
-//     switch (op)
-//     {
-//     case 0:
-//         _imcSessao(login, senha);
-//         break;
-//     case 1:
-//         do
-//         {
-//             fflush(stdin);
-//             printf(">> DIGITE SEU NOME COMPLETO:\n");
-//             fgets(update.nome);
-//             strupr(update.nome);
-//             for (cont = 0; cont < strlen(update.nome); cont++)
-//             {
-//                 if (update.nome[cont] == ' ')
-//                 {
-//                     espaco = 1;
-//                 }
-//             }
-//             if (espaco == 0)
-//             {
-//                 printf("ERRO! Nome inv�lido.\n");
-//             }
-//         } while (espaco == 0);
-//         break;
-//     case 2:
-//         do
-//         {
-//             char sexo;
-//             fflush(stdin);
-//             printf(">> QUAL SEU SEXO (M / F):\n");
-//             scanf("%c", &sexo);
-//             update.sexo = toupper(sexo);
-//             if (update.sexo != 'M' && update.sexo != 'F')
-//             {
-//                 printf("ERRO! Alternativa inv�lida.\n");
-//             }
-//         } while (update.sexo != 'M' && update.sexo != 'F');
-//         break;
-//     case 3:
+    //     do
+    //     {
+    //         int spc;
+    //         do
+    //         {
+    //             spc = 0;
+    //             do
+    //             {
+    //                 fflush(stdin);
+    //                 printf(">> NOME DE USU�RIO (MAX - 20):\n");
+    //                 fgets(update.login);
+    //                 if (strlen(update.login) > 20)
+    //                 {
+    //                     printf("ERRO! Nome de usu�rio deve ter no maximo 20 caracteres.\n");
+    //                 }
+    //             } while (strlen(update.login) > 20);
 
-//         do
-//         {
-//             int spc;
-//             do
-//             {
-//                 spc = 0;
-//                 do
-//                 {
-//                     fflush(stdin);
-//                     printf(">> NOME DE USU�RIO (MAX - 20):\n");
-//                     fgets(update.login);
-//                     if (strlen(update.login) > 20)
-//                     {
-//                         printf("ERRO! Nome de usu�rio deve ter no maximo 20 caracteres.\n");
-//                     }
-//                 } while (strlen(update.login) > 20);
+    //             for (cont = 0; cont < strlen(update.login); cont++)
+    //             {
+    //                 if (update.login[cont] == ' ')
+    //                 {
+    //                     printf("ERRO! N�o pode haver espa�os.\n");
+    //                     spc = 1;
+    //                 }
+    //                 break;
+    //             }
+    //         } while (spc == 1);
+    //         if (_BD_validarUserName(update.login) == 1)
+    //         {
+    //             printf("Login j� utilizado por outro usu�rio :(\n");
+    //         }
+    //         else
+    //         {
+    //             if (_BD_validarUserName(update.login) == -1)
+    //             {
+    //                 erro = 1;
+    //             }
+    //             else
+    //             {
+    //                 if (_BD_validarUserName(update.login) == -2)
+    //                 {
+    //                     erro = 1;
+    //                     _conStatus02();
+    //                 }
+    //                 else
+    //                 {
+    //                     if (_BD_validarUserName(update.login) == -3)
+    //                     {
+    //                         erro = 1;
+    //                         _conStatus03();
+    //                     }
+    //                     else
+    //                     {
+    //                         erro = 0;
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //     } while (erro != 0);
+    //     break;
+    // case 4:
+    //     do
+    //     {
+    //         do
+    //         {
+    //             printf(">> DIGITE UMA SENHA (APENAS N�MEROS, MAX - 5):\n");
+    //             fflush(stdin);
+    //             scanf("%d", &update.senha);
+    //             if (update.senha > 99999)
+    //             {
+    //                 printf("ERRO! Senha deve ter no maximo 5 digitos.\n");
+    //             }
+    //         } while (update.senha > 99999);
 
-//                 for (cont = 0; cont < strlen(update.login); cont++)
-//                 {
-//                     if (update.login[cont] == ' ')
-//                     {
-//                         printf("ERRO! N�o pode haver espa�os.\n");
-//                         spc = 1;
-//                     }
-//                     break;
-//                 }
-//             } while (spc == 1);
-//             if (_BD_validarUserName(update.login) == 1)
-//             {
-//                 printf("Login j� utilizado por outro usu�rio :(\n");
-//             }
-//             else
-//             {
-//                 if (_BD_validarUserName(update.login) == -1)
-//                 {
-//                     erro = 1;
-//                 }
-//                 else
-//                 {
-//                     if (_BD_validarUserName(update.login) == -2)
-//                     {
-//                         erro = 1;
-//                         _conStatus02();
-//                     }
-//                     else
-//                     {
-//                         if (_BD_validarUserName(update.login) == -3)
-//                         {
-//                             erro = 1;
-//                             _conStatus03();
-//                         }
-//                         else
-//                         {
-//                             erro = 0;
-//                         }
-//                     }
-//                 }
-//             }
-//         } while (erro != 0);
-//         break;
-//     case 4:
-//         do
-//         {
-//             do
-//             {
-//                 printf(">> DIGITE UMA SENHA (APENAS N�MEROS, MAX - 5):\n");
-//                 fflush(stdin);
-//                 scanf("%d", &update.senha);
-//                 if (update.senha > 99999)
-//                 {
-//                     printf("ERRO! Senha deve ter no maximo 5 digitos.\n");
-//                 }
-//             } while (update.senha > 99999);
+    //         printf(">> REPITA A SENHA DE ACESSO:\n");
+    //         fflush(stdin);
+    //         scanf("%d", &senhaR);
+    //         if (senhaR != update.senha)
+    //         {
+    //             printf("ERRO! Senhas n�o coincidem.\n");
+    //         }
+    //     } while (senhaR != update.senha);
+    //     break;
+    default:
+        system(CMD_CLEAR);
+        _imcUpdateCadImc();
+        break;
+    }
 
-//             printf(">> REPITA A SENHA DE ACESSO:\n");
-//             fflush(stdin);
-//             scanf("%d", &senhaR);
-//             if (senhaR != update.senha)
-//             {
-//                 printf("ERRO! Senhas n�o coincidem.\n");
-//             }
-//         } while (senhaR != update.senha);
-//         break;
-//     default:
-//         // MessageBox(NULL, "Op��o inv�lida!", "ERRO!", MB_OK | MB_ICONERROR);
-//         system(CMD_CLEAR);
-//         _imcUpdateCadImc(login, senha);
-//         break;
-//     }
+    // if (connObj.conn = mysql_init(0))
+    // {
+    //     if (connObj.conn = mysql_real_connect(connObj.conn, dbConfig.host, dbConfig.user, dbConfig.pass, dbConfig.database, dbConfig.port, NULL, 0))
+    //     {
 
-//     if (connObj.conn = mysql_init(0))
-//     {
-//         if (connObj.conn = mysql_real_connect(connObj.conn, dbConfig.host, dbConfig.user, dbConfig.pass, dbConfig.database, dbConfig.port, NULL, 0))
-//         {
-
-//             sprintf(query, "UPDATE t_Users SET nome = '%s', sexo = '%c', login ='%s', senha = '%d' WHERE login = '%s' AND senha = '%d'", update.nome, update.sexo, update.login, update.senha, login, senha);
-//             connObj.qstate = mysql_query(connObj.conn, query);
-//             if (!connObj.qstate)
-//             {
-//                 printf(">> CADASTRO ATUALIZADO COM SUCESSO!\n");
-//                 mysql_close(connObj.conn);
-//             }
-//             else
-//             {
-//                 _conStatus00(connObj);
-//                 mysql_close(connObj.conn);
-//                 return 0;
-//             }
-//         }
-//         else
-//         {
-//             _conStatus02();
-//         }
-//     }
-//     else
-//     {
-//         _conStatus03();
-//     }
-// }
+    //         sprintf(query, "UPDATE t_Users SET nome = '%s', sexo = '%c', login ='%s', senha = '%d' WHERE login = '%s' AND senha = '%d'", update.nome, update.sexo, update.login, update.senha, login, senha);
+    //         connObj.qstate = mysql_query(connObj.conn, query);
+    //         if (!connObj.qstate)
+    //         {
+    //             printf(">> CADASTRO ATUALIZADO COM SUCESSO!\n");
+    //             mysql_close(connObj.conn);
+    //         }
+    //         else
+    //         {
+    //             _conStatus00(connObj);
+    //             mysql_close(connObj.conn);
+    //             return 0;
+    //         }
+    //     }
+    //     else
+    //     {
+    //         _conStatus02();
+    //     }
+    // }
+    // else
+    // {
+    //     _conStatus03();
+    // }
+}
 
 // // VERIFICA SE O NOME DE t_User JA EXISTE NO BD
 // int _BD_validarUserName(char *login)
@@ -933,311 +861,247 @@ void _imcCad()
 //     }
 // }
 
-// // VALIDAR ACESSO
-// int _BD_validarLogin(char login[20], int senha)
-// {
-
-//     _dbSetup();
-//     _dbGetConfig(&dbConfig);
-
-//     if (connObj.conn = mysql_init(0))
-//     {
-//         if (connObj.conn = mysql_real_connect(connObj.conn, dbConfig.host, dbConfig.user, dbConfig.pass, dbConfig.database, dbConfig.port, NULL, 0))
-//         {
-//             char query[200];
-//             sprintf(query, "select login,senha from t_Users where login = '%s' and senha = '%d'", login, senha);
-//             connObj.qstate = mysql_query(connObj.conn, query);
-//             if (!connObj.qstate)
-//             {
-//                 connObj.res = mysql_store_result(connObj.conn);
-//                 while (connObj.row = mysql_fetch_row(connObj.res))
-//                 {
-//                     if (connObj.row[0])
-//                     {
-//                         mysql_close(connObj.conn);
-//                         return 1;
-//                     }
-//                 }
-//             }
-//             else
-//             {
-//                 _conStatus00(connObj);
-//                 mysql_close(connObj.conn);
-//                 return 0;
-//             }
-//         }
-//         else
-//         {
-//             _conStatus02();
-//             return 0;
-//         }
-//     }
-//     else
-//     {
-//         _conStatus03();
-//         return 0;
-//     }
-// }
-
-void _BD_pegarUserInfo(char *login, int senha)
+int _dbValidateLogin(t_User *_user, char *_login, int _password)
 {
     _dbSetup();
     _dbGetConfig(&dbConfig);
 
-    if ((connObj.conn = mysql_init(0)))
+    if (!_dbInit() || !_dbConnect(&dbConfig))
     {
-        if ((connObj.conn = mysql_real_connect(
-                 connObj.conn,
-                 dbConfig.host,
-                 dbConfig.user,
-                 dbConfig.pass,
-                 dbConfig.database,
-                 dbConfig.port, NULL, 0)))
-        {
+        return _False;
+    }
 
-            int id;
-            // int i;
-            int contReg = 0;
-            float contRegTotal = 0;
-            float media;
-            char ultimoReg[22];
+    char query[200];
+    sprintf(query, "SELECT * FROM usuarios WHERE login = '%s' AND senha = %d", _login, _password);
 
-            strcpy(ultimoReg, "NULL");
+    if (
+        mysql_query(connObj.conn, query) != MYSQL_STATUS_READY ||
+        ((connObj.res = mysql_store_result(connObj.conn)) && (int)mysql_num_rows(connObj.res) == 0))
+    {
+        _msgDanger("ERRO!", "Login ou senha inválida.");
+        mysql_close(connObj.conn);
+        return _False;
+    }
 
-            char query[200];
-            sprintf(query, "SELECT id,nome,sexo,login,senha from usuarios where login = '%s' and senha = '%d'", login, senha);
-            connObj.qstate = mysql_query(connObj.conn, query);
-            if (!connObj.qstate)
-            {
-                connObj.res = mysql_store_result(connObj.conn);
-                printf("+-----------------------------------------------------------------------+\n");
-                while ((connObj.row = mysql_fetch_row(connObj.res)))
-                {
-                    id = atoi(connObj.row[0]);
-                    printf("| %sNOME: %s%s%s\t\t\t\t\t\t\t|\n", BHCYN, BHYEL, connObj.row[1], COLOR_RESET);
-                }
-            }
-            else
-            {
-                // _conStatus00(connObj);
-                mysql_close(connObj.conn);
-            }
+    MYSQL_ROW row = mysql_fetch_row(connObj.res);
 
-            sprintf(query, "SELECT * FROM registros WHERE usuarios_id = '%d'", id);
-            connObj.qstate = mysql_query(connObj.conn, query);
-            if (!connObj.qstate)
-            {
-                connObj.res = mysql_store_result(connObj.conn);
-                printf("+-----------------------------------------------------------------------+\n");
-                printf("|%s\tID\t%s|%s\tIMC\t%s|%s\t\tDATA HORA\t\t%s|\n", BHCYN, COLOR_RESET, BHCYN, COLOR_RESET, BHCYN, COLOR_RESET);
-                printf("+-----------------------------------------------------------------------+\n");
-                while ((connObj.row = mysql_fetch_row(connObj.res)))
-                {
-                    printf("|%s\t%s\t%s| %s%s\t\t%s|\t%s%s\t\t%s|\n",
-                           BHYEL,
-                           connObj.row[0],
-                           COLOR_RESET,
-                           BHYEL,
-                           connObj.row[2],
-                           COLOR_RESET,
-                           BHYEL,
-                           connObj.row[3],
-                           COLOR_RESET);
-                    contReg++;
-                    contRegTotal += atof(connObj.row[2]);
-                    strcpy(ultimoReg, connObj.row[3]);
-                }
+    _user->id = atoi(row[0]);
+    _user->name = row[1];
 
-                if (contReg != 0)
-                {
-                    media = contRegTotal / contReg;
-                }
-                else
-                {
-                    media = 0;
-                }
+    // printf("%s", row[2]);
+    // exit(1);
 
-                printf("+-----------------------------------------------------------------------+\n");
-                printf("| %sRegistros: %s%d%s\t| %sMédia: %s%.2f%s \t| %sÚltimo: %s%s%s\t|\n",
-                       BHCYN,
-                       BHYEL,
-                       contReg,
-                       COLOR_RESET,
-                       BHCYN,
-                       BHYEL,
-                       media,
-                       COLOR_RESET,
-                       BHCYN,
-                       BHYEL,
-                       ultimoReg,
-                       COLOR_RESET);
-                printf("+-----------------------------------------------------------------------+\n");
-            }
-            else
-            {
-                // _conStatus00(connObj);
-                mysql_close(connObj.conn);
-            }
-            mysql_close(connObj.conn);
-        }
-        else
-        {
-            // _conStatus02();
-        }
+    _user->genre = row[2][0] == "M"[0] ? M : F;
+    _user->login = row[3];
+    _user->password = atoi(row[4]);
+
+    return _True;
+}
+
+void _BD_pegarUserInfo()
+{
+    _dbSetup();
+    _dbGetConfig(&dbConfig);
+
+    if (!_dbInit() || !_dbConnect(&dbConfig))
+    {
+        return;
+    }
+
+    int contReg = 0;
+    float contRegTotal = 0;
+    float media;
+    char ultimoReg[22];
+
+    strcpy(ultimoReg, "NULL");
+
+    char query[200];
+    sprintf(query, "SELECT * FROM usuarios WHERE login = '%s' AND senha = %d", user.login, user.password);
+
+    if (mysql_query(connObj.conn, query) != MYSQL_STATUS_READY)
+    {
+        _msgDanger("Erro!", "Login ou senha inválida.");
+        mysql_close(connObj.conn);
+        return;
+    }
+
+    connObj.res = mysql_store_result(connObj.conn);
+
+    if ((int)mysql_num_rows(connObj.res) == 0)
+    {
+        _msgDanger("Erro!", "Nenhum usuário encontrado.");
+        mysql_close(connObj.conn);
+        return;
+    }
+
+    MYSQL_ROW r = mysql_fetch_row(connObj.res);
+
+    printf("+-----------------------------------------------------------------------+\n");
+    printf("| %sNOME: %s%s%s\t\t\t\t\t\t\t|\n", BHCYN, BHYEL, r[1], COLOR_RESET);
+
+    sprintf(query, "SELECT * FROM registros WHERE usuarios_id = %s", r[0]);
+
+    if (mysql_query(connObj.conn, query) != MYSQL_STATUS_READY)
+    {
+        _msgDanger("Erro!", "ID usuário inválida.");
+        mysql_close(connObj.conn);
+        return;
+    }
+
+    connObj.res = mysql_store_result(connObj.conn);
+
+    if ((int)mysql_num_rows(connObj.res) == 0)
+    {
+        _msgDanger("Erro!", "Nenhum registro encontrado.");
+        mysql_close(connObj.conn);
+        return;
+    }
+
+    printf("+-----------------------------------------------------------------------+\n");
+    printf("|%s\tID\t%s|%s\tIMC\t%s|%s\t\tDATA HORA\t\t%s|\n",
+           BHCYN,
+           COLOR_RESET,
+           BHCYN,
+           COLOR_RESET,
+           BHCYN,
+           COLOR_RESET);
+    printf("+-----------------------------------------------------------------------+\n");
+
+    MYSQL_ROW row;
+    while ((row = mysql_fetch_row(connObj.res)))
+    {
+        printf("|%s\t%s\t%s| %s%s\t\t%s|\t%s%s\t\t%s|\n",
+               BHYEL,
+               row[0],
+               COLOR_RESET,
+               BHYEL,
+               row[2],
+               COLOR_RESET,
+               BHYEL,
+               row[3],
+               COLOR_RESET);
+        contReg++;
+        contRegTotal += atof(row[2]);
+        strcpy(ultimoReg, row[3]);
+    }
+
+    if (contReg != 0)
+    {
+        media = contRegTotal / contReg;
     }
     else
     {
-        _confirmOk("ERRO FATAL!", "NÃO foi possivel criar o OBJETO de conexão!", _Danger);
+        media = 0;
     }
+
+    printf("+-----------------------------------------------------------------------+\n");
+    printf("| %sRegistros: %s%d%s\t| %sMédia: %s%.2f%s \t| %sÚltimo: %s%s%s\t|\n",
+           BHCYN,
+           BHYEL,
+           contReg,
+           COLOR_RESET,
+           BHCYN,
+           BHYEL,
+           media,
+           COLOR_RESET,
+           BHCYN,
+           BHYEL,
+           ultimoReg,
+           COLOR_RESET);
+    printf("+-----------------------------------------------------------------------+\n");
 }
 
-// // ADICIONA UM NOVO IMC (REGISTRO) NO BD
-// void _BD_registrarImc(char login[20], int senha)
-// {
+void _BD_registrarImc()
+{
+    _dbSetup();
+    _dbGetConfig(&dbConfig);
 
-//     _dbSetup();
-//     _dbGetConfig(&dbConfig);
-//     int i;
-//     float peso, altura;
-//     char _id[5], imc[10], query[100];
+    if (!_dbInit() || !_dbConnect(&dbConfig))
+    {
+        return;
+    }
 
-//     fflush(stdin);
-//     printf(" (Kg)\tDIGITE SEU PESO:  ");
-//     scanf("%f", &peso);
-//     printf(" (cm)\tDIGITE SUA ALTURA: ");
-//     scanf("%f", &altura);
-//     altura /= 100;
-//     sprintf(imc, "%.2f", peso = peso / (altura * altura));
-//     for (i = 0; i < strlen(imc); i++)
-//     {
-//         if (imc[i] == ',')
-//         {
-//             imc[i] = '.';
-//         }
-//     }
+    float peso, altura;
+    char imc[10], query[100];
 
-//     if (connObj.conn = mysql_init(0))
-//     {
-//         if (connObj.conn = mysql_real_connect(connObj.conn, dbConfig.host, dbConfig.user, dbConfig.pass, dbConfig.database, dbConfig.port, NULL, 0))
-//         {
-//             sprintf(query, "select idt_User from t_Users where login = '%s' and senha = '%d'", login, senha);
-//             connObj.qstate = mysql_query(connObj.conn, query);
-//             if (!connObj.qstate)
-//             {
-//                 connObj.res = mysql_store_result(connObj.conn);
-//                 while (connObj.row = mysql_fetch_row(connObj.res))
-//                 {
-//                     strcpy(_id, connObj.row[0]);
-//                 }
-//             }
-//             else
-//             {
-//                 _conStatus00(connObj);
-//             }
+    fflush(stdin);
+    _msgWarning("IMC", "(Kg)\tDIGITE SEU PESO:");
+    printf("::: ");
+    scanf("%f", &peso);
 
-//             sprintf(query, "INSERT INTO registros (t_Users_idt_User,imc,datahora) VALUES (%s,%s,'%s')", _id, imc, _dateTime());
-//             connObj.qstate = mysql_query(connObj.conn, query);
-//             if (!connObj.qstate)
-//             {
-//                 printf("IMC REGISTRADO COM SUCESSO!\n");
-//             }
-//             else
-//             {
-//                 _conStatus00(connObj);
-//             }
-//             mysql_close(connObj.conn);
-//         }
-//         else
-//         {
-//             _conStatus02();
-//         }
-//     }
-//     else
-//     {
-//         _conStatus03();
-//     }
-// }
+    _msgWarning("IMC", "(cm)\tDIGITE SUA ALTURA:");
+    printf("::: ");
+    scanf("%f", &altura);
 
-// // EXIBIR TODOS OS REGISTROS DE IMC
-// void _BD_exibirImc(char login[20], int senha)
-// {
+    altura /= 100;
 
-//     _dbSetup();
-//     _dbGetConfig(&dbConfig);
-//     int i;
-//     char _id[5];
-//     printf("\n");
-//     for (i = 0; i < 35; i++)
-//     {
-//         printf(" ");
-//     }
-//     printf("REGISTROS:\n\n");
-//     if (connObj.conn = mysql_init(0))
-//     {
-//         if (connObj.conn = mysql_real_connect(connObj.conn, dbConfig.host, dbConfig.user, dbConfig.pass, dbConfig.database, dbConfig.port, NULL, 0))
-//         {
-//             char query[200];
-//             sprintf(query, "select idt_User from t_Users where login = '%s' and senha = '%d'", login, senha);
-//             connObj.qstate = mysql_query(connObj.conn, query);
-//             if (!connObj.qstate)
-//             {
-//                 connObj.res = mysql_store_result(connObj.conn);
-//                 while (connObj.row = mysql_fetch_row(connObj.res))
-//                 {
-//                     strcpy(_id, connObj.row[0]);
-//                 }
-//             }
-//             else
-//             {
-//                 _conStatus00(connObj);
-//             }
+    sprintf(imc, "%.2f", peso / (altura * altura));
 
-//             fflush(stdin);
-//             sprintf(query, "select * from registros where t_Users_idt_User = '%s'", _id);
-//             connObj.qstate = mysql_query(connObj.conn, query);
-//             if (!connObj.qstate)
-//             {
-//                 connObj.res = mysql_store_result(connObj.conn);
-//                 int cont = 0, tam = 0;
-//                 char reg[40];
-//                 while (connObj.row = mysql_fetch_row(connObj.res))
-//                 {
-//                     cont++;
-//                     sprintf(reg, "%d - [ %s ] - IMC: %s\n", cont, connObj.row[3], connObj.row[2]);
-//                     tam = strlen(reg);
-//                     tam = (80 - tam) / 2;
-//                     for (i = 0; i < tam; i++)
-//                     {
-//                         printf(" ");
-//                     }
-//                     printf("%s", reg);
-//                     for (i = 0; i < 80; i++)
-//                     {
-//                         printf("-");
-//                     }
-//                     if (cont == 25)
-//                     {
-//                         break;
-//                     }
-//                     fflush(stdout);
-//                 }
-//             }
-//             else
-//             {
-//                 _conStatus00(connObj);
-//             }
-//             mysql_close(connObj.conn);
-//         }
-//         else
-//         {
-//             _conStatus02();
-//         }
-//     }
-//     else
-//     {
-//         _conStatus03();
-//     }
-// }
+    for (int i = 0; i < strlen(imc); i++)
+    {
+        if (imc[i] == ',')
+        {
+            imc[i] = '.';
+        }
+    }
+
+    sprintf(query, "INSERT INTO registros (usuarios_id,imc,datahora) VALUES (%d,%s,'%s')",
+            user.id, imc, _dateTime());
+
+    if (
+        mysql_query(connObj.conn, query) != MYSQL_STATUS_READY ||
+        (int)mysql_affected_rows(connObj.conn) == 0)
+    {
+        _msgDanger("ERRO!", "Falha em inserir novo IMC.");
+        mysql_close(connObj.conn);
+        return;
+    }
+
+    _msgSuccess("OBA!", "IMC registrado com sucesso.");
+    mysql_close(connObj.conn);
+}
+
+void _BD_exibirImc()
+{
+    _dbSetup();
+    _dbGetConfig(&dbConfig);
+
+    if (!_dbInit() || !_dbConnect(&dbConfig))
+    {
+        return;
+    }
+
+    printf("\tREGISTROS:\n\n");
+
+    char query[200];
+
+    fflush(stdin);
+    sprintf(query, "SELECT * FROM registros WHERE usuarios_id = '%d'", user.id);
+
+    if (
+        mysql_query(connObj.conn, query) != MYSQL_STATUS_READY ||
+        ((connObj.res = mysql_store_result(connObj.conn)) && (int)mysql_num_rows(connObj.res) == 0))
+    {
+        _msgDanger("ERRO!", "Nenhum registro encontrado.");
+        mysql_close(connObj.conn);
+        return;
+    }
+
+    int cont = 1;
+    char reg[40];
+
+    MYSQL_ROW row;
+
+    while ((row = mysql_fetch_row(connObj.res)))
+    {
+        sprintf(reg, "\t%d - [ %s ] - IMC: %s\n", cont, row[3], row[2]);
+        printf("%s", reg);
+        fflush(stdout);
+        cont++;
+    }
+    printf("\n");
+    mysql_close(connObj.conn);
+}
 
 // // DELETA CONTA CADASTRADA
 // void _BD_delCad(char login[20], int senha)
@@ -1386,37 +1250,51 @@ void _dbUpdateConfig()
     }
 }
 
+int _dbInit()
+{
+    connObj.conn = mysql_init(0);
+    if (!connObj.conn)
+    {
+        _confirmOk("ERRO FATAL!", "NÃO foi possivel criar o OBJETO de conexão!", _Danger);
+        return _False;
+    }
+    return _True;
+}
+
+int _dbConnect(t_DBInfo *_dbConfig)
+{
+    connObj.conn = mysql_real_connect(
+        connObj.conn,
+        _dbConfig->host,
+        _dbConfig->user,
+        _dbConfig->pass,
+        _dbConfig->database,
+        _dbConfig->port,
+        NULL,
+        0);
+    if (!connObj.conn)
+    {
+        char msg[206];
+        sprintf(msg, "IMPOSSÍVEL ESTABELECER CONEXÃO!\n- Verifique se há conexão com a internet.\n- Verifique se as configurações de ACESSO ao BANCO DE DADOS estão CORRETAS.\n- Verifique se o MySQL está ativo (localhost).");
+        _confirmOk("ERRO FATAL!", msg, _Danger);
+        return _False;
+    }
+    return _True;
+}
+
 void _dbCheckConn()
 {
     _dbSetup();
     _dbGetConfig(&dbConfig);
 
-    if ((connObj.conn = mysql_init(0)))
+    if (!_dbInit() || !_dbConnect(&dbConfig))
     {
-        if ((connObj.conn = mysql_real_connect(
-                 connObj.conn,
-                 dbConfig.host,
-                 dbConfig.user,
-                 dbConfig.pass,
-                 dbConfig.database,
-                 dbConfig.port,
-                 NULL,
-                 0)))
-        {
-            char msg[132];
-            sprintf(msg, "CONEXÃO OK! BASE DE DADOS: %s\n(%s)", dbConfig.database, _dateTime());
-            _confirmOk("Sucesso!", msg, _Info);
-            mysql_close(connObj.conn);
-        }
-        else
-        {
-            char msg[206];
-            sprintf(msg, "IMPOSSÍVEL ESTABELECER CONEXÃO!\n- Verifique se há conexão com a internet.\n- Verifique se as configurações de ACESSO ao BANCO DE DADOS estão CORRETAS.\n- Verifique se o MySQL está ativo (localhost).");
-            _confirmOk("ERRO FATAL!", msg, _Danger);
-        }
+        return;
     }
-    else
-    {
-        _confirmOk("ERRO FATAL!", "NÃO foi possivel criar o OBJETO de conexão!", _Danger);
-    }
+
+    char msg[132];
+    sprintf(msg, "CONEXÃO OK! BASE DE DADOS: %s\n(%s)", dbConfig.database, _dateTime());
+    _confirmOk("Sucesso!", msg, _Info);
+
+    mysql_close(connObj.conn);
 }

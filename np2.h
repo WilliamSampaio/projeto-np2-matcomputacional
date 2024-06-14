@@ -46,9 +46,10 @@ typedef struct
 
 typedef struct
 {
-    char name[60];
+    int id;
+    char *name;
     int genre;
-    char login[20];
+    char *login;
     int password;
 } t_User;
 
@@ -79,12 +80,12 @@ void _imcTitulo();
 void _imcMenu();
 void _imcCad();
 
-// void _imcEntrar();
+void _imcEntrar();
 // void _imcRelatorio(char *, int);
 // void _imcExibirImc(char *, int);
 // void _imcDelCadImc(char *, int);
 // void _imcUpdateCadImc(char *, int);
-// void _imcSessao(char *, int);
+void _imcSession();
 
 // void load();
 
@@ -92,11 +93,16 @@ void _writeConfig(FILE **);
 void _dbSetup();
 void _dbGetConfig(t_DBInfo *);
 void _dbUpdateConfig();
+int _dbInit();
+int _dbConnect(t_DBInfo *);
+
 void _dbCheckConn();
 
 void _dbCreateUser();
-// void _BD_atualizarCad(char *, int);
-void _BD_pegarUserInfo(char *, int);
-// void _BD_registrarImc(char *, int);
-// void _BD_exibirImc(char *, int);
+void _BD_atualizarCad();
+void _BD_pegarUserInfo();
+void _BD_registrarImc();
+void _BD_exibirImc();
 // void _BD_delCad(char *, int);
+
+int _dbValidateLogin(t_User *, char *, int);
