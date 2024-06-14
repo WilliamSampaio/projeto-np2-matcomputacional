@@ -16,7 +16,8 @@ enum boolean
 enum dataTypes
 {
     _String,
-    _Int
+    _Int,
+    _Float
 };
 
 enum status
@@ -59,6 +60,14 @@ typedef struct
     unsigned int password;
 } t_User;
 
+typedef struct
+{
+    unsigned int id;
+    unsigned int user_id;
+    float imc;
+    char *datetime;
+} t_IMC;
+
 void user_init(t_User *);
 
 void _msgSuccess(char *, char *);
@@ -99,6 +108,7 @@ void _imcReport();
 // void _imcDelCadImc(char *, int);
 // void _imcUpdateCadImc(char *, int);
 void _imcSession();
+void _imcAddIMC();
 
 // void load();
 
@@ -113,9 +123,9 @@ void _dbCheckConn();
 
 void _dbCreateUser();
 void _BD_atualizarCad();
-void _BD_pegarUserInfo();
-void _BD_registrarImc();
 void _BD_exibirImc();
 // void _BD_delCad(char *, int);
 
 int _dbValidateLogin(t_User *, char *, int);
+int _dbInsertIMC(t_User *, float);
+t_IMC *_dbGetIMCbyUserId(t_User *);

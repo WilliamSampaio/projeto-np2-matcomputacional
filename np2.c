@@ -120,6 +120,9 @@ void _getData(void *_var, int _type, char *_message, int _status)
     case _Int:
         scanf("%d", (int *)_var);
         break;
+    case _Float:
+        scanf("%f", (float *)_var);
+        break;
     default:
         _msgDanger("ERRO", "Tipo de dado inválido.");
         break;
@@ -364,6 +367,7 @@ void _imcMenu()
         break;
     case 1:
         _imcLogin();
+        _imcMenu();
         break;
     case 2:
         // _imcCad();
@@ -399,21 +403,16 @@ void _imcLogin()
     _getData(&login, _String, "LOGIN", _Warning);
     _getData(&senha, _Int, "SENHA", _Warning);
 
-    if (_dbValidateLogin(&user, login, senha) == _False)
+    if (_dbValidateLogin(&user, login, senha))
     {
-        if (_confirmYesNo("Autenticação Falhou!", "Tentar novamente?", _Danger))
-        {
-            return _imcLogin();
-        }
-        return _imcMenu();
+        return _imcSession();
     }
-    return _imcSession();
-}
 
-// PEGAR AS INFORMA��ES DO t_User LOGADO
-void _imcReport()
-{
-    _BD_pegarUserInfo();
+    printf("\n");
+    if (_confirmYesNo("ERRO!", "Login ou senha inválida. Tentar novamente?", _Danger))
+    {
+        return _imcLogin();
+    }
 }
 
 void _imcExibirImc()
@@ -441,7 +440,7 @@ void _imcSession()
     _imcTxtTitle();
     // _imcReport();
     _msgSuccess("[1]", "REGISTRAR NOVO IMC");
-    _msgSuccess("[2]", "EXIBIR TODOS OS REGISTROS");
+    _msgSuccess("[2]", "RELATÓRIO");
     printf("\n");
     _msgSuccess("[4]", "ALTERAR DADOS PESSOAIS");
     printf("\n");
@@ -464,17 +463,11 @@ void _imcSession()
         _exitNP2();
         break;
     case 1:
-        system(CMD_CLEAR);
-        _imcTxtTitle();
-        _BD_registrarImc();
-        _confirmOk("Data/Hora", _dateTime(), _Danger);
+        _imcAddIMC();
         _imcSession();
         break;
     case 2:
-        system(CMD_CLEAR);
-        _imcTxtTitle();
-        _imcExibirImc();
-        _confirmOk("Data/Hora", _dateTime(), _Danger);
+        _imcReport();
         _imcSession();
         break;
     case 4:
@@ -906,204 +899,108 @@ void _BD_atualizarCad()
 //     }
 // }
 
-int _dbValidateLogin(t_User *_user, char *_login, int _password)
+void _imcReport()
 {
-    _dbSetup();
-    _dbGetConfig(&dbConfig);
+    _imcTxtTitle();
 
-    if (!_dbInit() || !_dbConnect(&dbConfig))
+    t_IMC *values = _dbGetIMCbyUserId(&user);
+
+    printf("+----------------------------------------------------------------+\n");
+    printf("| %sNOME: %s%s%s\t\t\t\t\t\t |\n", BHCYN, BHYEL, user.name, COLOR_RESET);
+
+    if (values != NULL)
     {
-        return _False;
-    }
+        int contReg = 0;
+        float contRegTotal = 0;
+        float media;
+        char ultimo_reg[22];
 
-    char query[200];
-    sprintf(query, "SELECT * FROM usuarios WHERE login = '%s' AND senha = %d", _login, _password);
+        strcpy(ultimo_reg, "NULL");
 
-    if (
-        mysql_query(connObj.conn, query) != MYSQL_STATUS_READY ||
-        ((connObj.res = mysql_store_result(connObj.conn)) && (int)mysql_num_rows(connObj.res) == 0))
-    {
-        _msgDanger("ERRO!", "Login ou senha inválida.");
-        mysql_close(connObj.conn);
-        return _False;
-    }
-
-    MYSQL_ROW row = mysql_fetch_row(connObj.res);
-
-    _user->id = atoi(row[0]);
-    _user->name = row[1];
-
-    // printf("%s", row[2]);
-    // exit(1);
-
-    _user->genre = row[2][0] == "M"[0] ? M : F;
-    _user->login = row[3];
-    _user->password = atoi(row[4]);
-
-    return _True;
-}
-
-void _BD_pegarUserInfo()
-{
-    _dbSetup();
-    _dbGetConfig(&dbConfig);
-
-    if (!_dbInit() || !_dbConnect(&dbConfig))
-    {
-        return;
-    }
-
-    int contReg = 0;
-    float contRegTotal = 0;
-    float media;
-    char ultimoReg[22];
-
-    strcpy(ultimoReg, "NULL");
-
-    char query[200];
-    sprintf(query, "SELECT * FROM usuarios WHERE login = '%s' AND senha = %d", user.login, user.password);
-
-    if (mysql_query(connObj.conn, query) != MYSQL_STATUS_READY)
-    {
-        _msgDanger("Erro!", "Login ou senha inválida.");
-        mysql_close(connObj.conn);
-        return;
-    }
-
-    connObj.res = mysql_store_result(connObj.conn);
-
-    if ((int)mysql_num_rows(connObj.res) == 0)
-    {
-        _msgDanger("Erro!", "Nenhum usuário encontrado.");
-        mysql_close(connObj.conn);
-        return;
-    }
-
-    MYSQL_ROW r = mysql_fetch_row(connObj.res);
-
-    printf("+-----------------------------------------------------------------------+\n");
-    printf("| %sNOME: %s%s%s\t\t\t\t\t\t\t|\n", BHCYN, BHYEL, r[1], COLOR_RESET);
-
-    sprintf(query, "SELECT * FROM registros WHERE usuarios_id = %s", r[0]);
-
-    if (mysql_query(connObj.conn, query) != MYSQL_STATUS_READY)
-    {
-        _msgDanger("Erro!", "ID usuário inválida.");
-        mysql_close(connObj.conn);
-        return;
-    }
-
-    connObj.res = mysql_store_result(connObj.conn);
-
-    if ((int)mysql_num_rows(connObj.res) == 0)
-    {
-        _msgDanger("Erro!", "Nenhum registro encontrado.");
-        mysql_close(connObj.conn);
-        return;
-    }
-
-    printf("+-----------------------------------------------------------------------+\n");
-    printf("|%s\tID\t%s|%s\tIMC\t%s|%s\t\tDATA HORA\t\t%s|\n",
-           BHCYN,
-           COLOR_RESET,
-           BHCYN,
-           COLOR_RESET,
-           BHCYN,
-           COLOR_RESET);
-    printf("+-----------------------------------------------------------------------+\n");
-
-    MYSQL_ROW row;
-    while ((row = mysql_fetch_row(connObj.res)))
-    {
-        printf("|%s\t%s\t%s| %s%s\t\t%s|\t%s%s\t\t%s|\n",
-               BHYEL,
-               row[0],
+        printf("+----------------------------------------------------------------+\n");
+        printf("|%s\tID\t%s|%s\tIMC\t%s|%s           DATA HORA            %s|\n",
+               BHCYN,
                COLOR_RESET,
-               BHYEL,
-               row[2],
+               BHCYN,
                COLOR_RESET,
-               BHYEL,
-               row[3],
+               BHCYN,
                COLOR_RESET);
-        contReg++;
-        contRegTotal += atof(row[2]);
-        strcpy(ultimoReg, row[3]);
+        printf("+----------------------------------------------------------------+\n");
+
+        for (int i = 0; i < sizeof(values); i++)
+        {
+            printf("|%s\t%d\t%s| %s%.2f\t\t%s|     %s%s%s     |\n",
+                   BHYEL,
+                   values[i].id,
+                   COLOR_RESET,
+                   BHYEL,
+                   values[i].imc,
+                   COLOR_RESET,
+                   BHYEL,
+                   values[i].datetime,
+                   COLOR_RESET);
+
+            contReg++;
+            contRegTotal += values[i].imc;
+            strcpy(ultimo_reg, values[i].datetime);
+        }
+
+        if (contReg != 0)
+        {
+            media = contRegTotal / contReg;
+        }
+        else
+        {
+            media = 0;
+        }
+
+        printf("+----------------------------------------------------------------+\n");
+        printf("| %sRegistros: %s%d%s\t| %sMédia: %s%.2f%s \t| %sÚltimo: %s%s%s |\n",
+               BHCYN,
+               BHYEL,
+               contReg,
+               COLOR_RESET,
+               BHCYN,
+               BHYEL,
+               media,
+               COLOR_RESET,
+               BHCYN,
+               BHYEL,
+               ultimo_reg,
+               COLOR_RESET);
     }
 
-    if (contReg != 0)
-    {
-        media = contRegTotal / contReg;
-    }
-    else
-    {
-        media = 0;
-    }
-
-    printf("+-----------------------------------------------------------------------+\n");
-    printf("| %sRegistros: %s%d%s\t| %sMédia: %s%.2f%s \t| %sÚltimo: %s%s%s\t|\n",
-           BHCYN,
-           BHYEL,
-           contReg,
-           COLOR_RESET,
-           BHCYN,
-           BHYEL,
-           media,
-           COLOR_RESET,
-           BHCYN,
-           BHYEL,
-           ultimoReg,
-           COLOR_RESET);
-    printf("+-----------------------------------------------------------------------+\n");
+    printf("+----------------------------------------------------------------+\n");
+    printf("\n");
+    _confirmOk("Data/Hora", _dateTime(), _Danger);
 }
 
-void _BD_registrarImc()
+void _imcAddIMC()
 {
-    _dbSetup();
-    _dbGetConfig(&dbConfig);
+    _imcTxtTitle();
 
-    if (!_dbInit() || !_dbConnect(&dbConfig))
-    {
-        return;
-    }
-
-    float peso, altura;
-    char imc[10], query[100];
+    float peso, altura, IMC;
 
     fflush(stdin);
-    _msgWarning("IMC", "(Kg)\tDIGITE SEU PESO:");
-    printf("::: ");
-    scanf("%f", &peso);
 
-    _msgWarning("IMC", "(cm)\tDIGITE SUA ALTURA:");
-    printf("::: ");
-    scanf("%f", &altura);
+    _getData(&peso, _Float, "IMC - (Kg)\tDIGITE SEU PESO", _Warning);
+    _getData(&altura, _Float, "IMC - (cm)\tDIGITE SUA ALTURA", _Warning);
 
     altura /= 100;
 
-    sprintf(imc, "%.2f", peso / (altura * altura));
+    IMC = peso / (altura * altura);
 
-    for (int i = 0; i < strlen(imc); i++)
-    {
-        if (imc[i] == ',')
-        {
-            imc[i] = '.';
-        }
-    }
-
-    sprintf(query, "INSERT INTO registros (usuarios_id,imc,datahora) VALUES (%d,%s,'%s')",
-            user.id, imc, _dateTime());
-
-    if (
-        mysql_query(connObj.conn, query) != MYSQL_STATUS_READY ||
-        (int)mysql_affected_rows(connObj.conn) == 0)
+    if (!_dbInsertIMC(&user, IMC))
     {
         _msgDanger("ERRO!", "Falha em inserir novo IMC.");
-        mysql_close(connObj.conn);
-        return;
+    }
+    else
+    {
+        _msgSuccess("OBA!", "IMC registrado com sucesso.");
     }
 
-    _msgSuccess("OBA!", "IMC registrado com sucesso.");
-    mysql_close(connObj.conn);
+    printf("\n");
+    _confirmOk("Data/Hora", _dateTime(), _Danger);
 }
 
 void _BD_exibirImc()
@@ -1342,4 +1239,108 @@ void _dbCheckConn()
     _confirmOk("Sucesso!", msg, _Info);
 
     mysql_close(connObj.conn);
+}
+
+int _dbValidateLogin(t_User *_user, char *_login, int _password)
+{
+    // _dbSetup();
+    _dbGetConfig(&dbConfig);
+
+    if (!_dbInit() || !_dbConnect(&dbConfig))
+    {
+        return _False;
+    }
+
+    char query[200];
+    sprintf(query, "SELECT * FROM usuarios WHERE login = '%s' AND senha = %d", _login, _password);
+
+    if (
+        mysql_query(connObj.conn, query) != MYSQL_STATUS_READY ||
+        ((connObj.res = mysql_store_result(connObj.conn)) && (int)mysql_num_rows(connObj.res) == 0))
+    {
+        mysql_close(connObj.conn);
+        return _False;
+    }
+
+    MYSQL_ROW row = mysql_fetch_row(connObj.res);
+
+    _user->id = atoi(row[0]);
+    _user->name = row[1];
+
+    _user->genre = row[2][0] == "M"[0] ? M : F;
+    _user->login = row[3];
+    _user->password = atoi(row[4]);
+
+    return _True;
+}
+
+int _dbInsertIMC(t_User *_user, float _imc)
+{
+    // _dbSetup();
+    _dbGetConfig(&dbConfig);
+
+    if (!_dbInit() || !_dbConnect(&dbConfig))
+    {
+        return _False;
+    }
+
+    char query[200];
+    sprintf(query, "INSERT INTO registros (usuarios_id,imc,datahora) VALUES (%d,%f,'%s')",
+            _user->id,
+            _imc,
+            _dateTime());
+
+    if (
+        mysql_query(connObj.conn, query) != MYSQL_STATUS_READY ||
+        (int)mysql_affected_rows(connObj.conn) == 0)
+    {
+        mysql_close(connObj.conn);
+        return _False;
+    }
+
+    mysql_close(connObj.conn);
+    return _True;
+}
+
+t_IMC *_dbGetIMCbyUserId(t_User *_user)
+{
+    // _dbSetup();
+    _dbGetConfig(&dbConfig);
+
+    if (!_dbInit() || !_dbConnect(&dbConfig))
+    {
+        return NULL;
+    }
+
+    char query[200];
+    sprintf(query, "SELECT * FROM registros WHERE usuarios_id = %d", _user->id);
+
+    if (
+        mysql_query(connObj.conn, query) != MYSQL_STATUS_READY ||
+        ((connObj.res = mysql_store_result(connObj.conn)) && (int)mysql_num_rows(connObj.res) == 0))
+    {
+        mysql_close(connObj.conn);
+        return NULL;
+    }
+
+    t_IMC *values = malloc(sizeof(t_IMC) * mysql_num_rows(connObj.res));
+    if (!values)
+        return NULL;
+
+    MYSQL_ROW row;
+
+    int cont = 0;
+    while ((row = mysql_fetch_row(connObj.res)))
+    {
+        t_IMC t;
+        t.id = atoi(row[0]);
+        t.user_id = atoi(row[1]);
+        t.imc = (float)atof(row[2]);
+        t.datetime = row[3];
+        values[cont] = t;
+        cont++;
+    }
+
+    mysql_close(connObj.conn);
+    return values;
 }
