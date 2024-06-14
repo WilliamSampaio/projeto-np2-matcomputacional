@@ -428,17 +428,9 @@ void _imcExibirImc()
 //     _BD_delCad(login, senha);
 // }
 
-void _imcUpdateCadImc()
-{
-    system(CMD_CLEAR);
-    _imcTxtTitle();
-    _BD_atualizarCad();
-}
-
 void _imcSession()
 {
     _imcTxtTitle();
-    // _imcReport();
     _msgSuccess("[1]", "REGISTRAR NOVO IMC");
     _msgSuccess("[2]", "RELATÓRIO");
     printf("\n");
@@ -471,8 +463,7 @@ void _imcSession()
         _imcSession();
         break;
     case 4:
-        _imcUpdateCadImc();
-        _confirmOk("Data/Hora", _dateTime(), _Danger);
+        _imcUpdateUser();
         _imcSession();
         break;
     case 9:
@@ -668,53 +659,45 @@ void _imcSession()
 // }
 // }
 
-void _BD_atualizarCad()
+void _imcUpdateUser()
 {
-    _dbSetup();
-    _dbGetConfig(&dbConfig);
+    t_User u;
+    u.name = user.name;
+    u.genre = user.genre;
+    u.login = user.login;
+    u.password = user.password;
 
-    if (!_dbInit() || !_dbConnect(&dbConfig))
-    {
-        return;
-    }
-
-    // char query[200];
-
-    printf("::: %sATUALIZAR...%s\n\n", BHGRN, COLOR_RESET);
+    _imcTxtTitle();
+    _msgSuccess("ATUALIZAR...", "");
+    printf("\n");
     _msgInfo("[1] NOME", user.name);
     _msgInfo("[2] SEXO", user.genre == M ? "Masculino" : "Feminino");
     _msgInfo("[3] LOGIN", user.login);
     _msgInfo("[4] SENHA", "***");
-    printf("\n::: %s[0] VOLTAR%s\n\n::: ", BHGRN, COLOR_RESET);
+    printf("\n");
+    _msgSuccess("[0] VOLTAR", "");
+    printf("\n");
 
     int op;
-    scanf("%d", &op);
+    _getData(&op, _Int, "Digite o número da opção", _Success);
+    printf("\n");
 
     switch (op)
     {
     case 0:
         _imcSession();
         break;
-    // case 1:
-    //     do
-    //     {
-    //         fflush(stdin);
-    //         printf(">> DIGITE SEU NOME COMPLETO:\n");
-    //         fgets(update.nome);
-    //         strupr(update.nome);
-    //         for (cont = 0; cont < strlen(update.nome); cont++)
-    //         {
-    //             if (update.nome[cont] == ' ')
-    //             {
-    //                 espaco = 1;
-    //             }
-    //         }
-    //         if (espaco == 0)
-    //         {
-    //             printf("ERRO! Nome inv�lido.\n");
-    //         }
-    //     } while (espaco == 0);
-    //     break;
+    case 1:
+        char n[60];
+        _getData(&n, _String, "DIGITE SEU NOME COMPLETO", _Warning);
+        u.name = n;
+        if (_dbUpdateUser(&user, u))
+        {
+            printf("\n");
+            _confirmOk("SUCESSO!", "Nome do usuário atualizado.", _Success);
+            _imcUpdateUser();
+        }
+        break;
     // case 2:
     //     do
     //     {
@@ -815,39 +798,10 @@ void _BD_atualizarCad()
     //     } while (senhaR != update.senha);
     //     break;
     default:
-        system(CMD_CLEAR);
-        _imcUpdateCadImc();
+        _confirmOk("Erro", "Opção inválida.", _Danger);
+        _imcUpdateUser();
         break;
     }
-
-    // if (connObj.conn = mysql_init(0))
-    // {
-    //     if (connObj.conn = mysql_real_connect(connObj.conn, dbConfig.host, dbConfig.user, dbConfig.pass, dbConfig.database, dbConfig.port, NULL, 0))
-    //     {
-
-    //         sprintf(query, "UPDATE t_Users SET nome = '%s', sexo = '%c', login ='%s', senha = '%d' WHERE login = '%s' AND senha = '%d'", update.nome, update.sexo, update.login, update.senha, login, senha);
-    //         connObj.qstate = mysql_query(connObj.conn, query);
-    //         if (!connObj.qstate)
-    //         {
-    //             printf(">> CADASTRO ATUALIZADO COM SUCESSO!\n");
-    //             mysql_close(connObj.conn);
-    //         }
-    //         else
-    //         {
-    //             _conStatus00(connObj);
-    //             mysql_close(connObj.conn);
-    //             return 0;
-    //         }
-    //     }
-    //     else
-    //     {
-    //         _conStatus02();
-    //     }
-    // }
-    // else
-    // {
-    //     _conStatus03();
-    // }
 }
 
 // // VERIFICA SE O NOME DE t_User JA EXISTE NO BD
@@ -1299,6 +1253,42 @@ int _dbInsertIMC(t_User *_user, float _imc)
     }
 
     mysql_close(connObj.conn);
+    return _True;
+}
+
+int _dbUpdateUser(t_User *_user, t_User _updated_user)
+{
+    // _dbSetup();
+    _dbGetConfig(&dbConfig);
+
+    if (!_dbInit() || !_dbConnect(&dbConfig))
+    {
+        return _False;
+    }
+
+    char s = _updated_user.genre == M ? 'M' : 'F';
+
+    char query[200];
+    sprintf(query, "UPDATE usuarios SET nome = '%s', sexo = '%c', login = '%s', senha = %d WHERE id = %d",
+            _updated_user.name,
+            s,
+            _updated_user.login,
+            _updated_user.password,
+            _user->id);
+
+    if (
+        mysql_query(connObj.conn, query) != MYSQL_STATUS_READY ||
+        (int)mysql_affected_rows(connObj.conn) == 0)
+    {
+        mysql_close(connObj.conn);
+        return _False;
+    }
+
+    _user->name = _updated_user.name;
+    _user->genre = _updated_user.genre;
+    _user->login = _updated_user.login;
+    _user->password = _updated_user.password;
+
     return _True;
 }
 

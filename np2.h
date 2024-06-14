@@ -106,7 +106,7 @@ void _imcLogin();
 void _imcReport();
 // void _imcExibirImc(char *, int);
 // void _imcDelCadImc(char *, int);
-// void _imcUpdateCadImc(char *, int);
+void _imcUpdateUser();
 void _imcSession();
 void _imcAddIMC();
 
@@ -128,4 +128,5 @@ void _BD_exibirImc();
 
 int _dbValidateLogin(t_User *, char *, int);
 int _dbInsertIMC(t_User *, float);
+int _dbUpdateUser(t_User *, t_User);
 t_IMC *_dbGetIMCbyUserId(t_User *);
