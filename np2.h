@@ -103,9 +103,9 @@ void _imcMenu();
 void _imcReport();
 void _imcSession();
 void _imcTxtTitle();
+void _imcAddUser();
 void _imcUpdateUser();
 
-// void _imcCad();
 // void _imcDelCadImc(char *, int);
 
 // void load();
@@ -119,9 +119,9 @@ int _dbInit();
 int _dbConnect(t_DBInfo *);
 int _dbValidateLogin(t_User *, char *, int);
 int _dbInsertIMC(t_User *, float);
+int _dbAddUser(t_User);
 int _dbUpdateUser(t_User *, t_User);
 t_IMC *_dbGetIMCbyUserId(t_User *);
 
-void _dbCreateUser();
 void _BD_atualizarCad();
 // void _BD_delCad(char *, int);

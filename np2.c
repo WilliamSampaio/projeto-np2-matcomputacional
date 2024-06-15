@@ -110,6 +110,7 @@ void _confirmOk(char *_title, char *_message, int _status)
 
 void _getData(void *_var, int _type, char *_message, int _status)
 {
+    setbuf(stdin, NULL);
     _msg(_message, "", _status);
     printf("::: ");
     switch (_type)
@@ -370,7 +371,7 @@ void _imcMenu()
         _imcMenu();
         break;
     case 2:
-        // _imcCad();
+        _imcAddUser();
         break;
     case 9:
         _mainMenu();
@@ -380,13 +381,6 @@ void _imcMenu()
         _imcMenu();
         break;
     }
-}
-
-void _imcCad()
-{
-    _imcTxtTitle();
-    // _dbCreateUser();
-    _imcMenu();
 }
 
 void _imcLogin()
@@ -477,177 +471,104 @@ void _imcSession()
     }
 }
 
-// void _dbCreateUser()
-// {
-//     _dbSetup();
-//     _dbGetConfig(&dbConfig);
+void _imcAddUser()
+{
+    setbuf(stdin, NULL);
+    t_User n_user;
 
-//     t_User user;
+    _imcTxtTitle();
+    _msgSuccess("NOVO USUÁRIO", "");
+    printf("\n");
 
-//     int cont, error, space = 0;
+    do
+    {
+        char n1[60], n2[60], fn[120];
+        _getData(&n1, _String, "DIGITE SEU NOME", _Warning);
+        _getData(&n2, _String, "DIGITE SEU SOBRENOME", _Warning);
+        sprintf(fn, "%s %s", n1, n2);
+        if (strlen(fn) > 60)
+        {
+            printf("\n");
+            _msgDanger("ERRO!", "Nome maior que 60 letras.");
+            continue;
+        }
+        for (int i = 0; i < strlen(fn); i++)
+        {
+            fn[i] = toupper(fn[i]);
+        }
+        n_user.name = fn;
+        break;
+    } while (_True);
 
-//     do
-//     {
-//         fflush(stdin);
-//         printf(">> DIGITE SEU NOME COMPLETO:\n");
-//         fgets(user.nome);
-//         strupr(user.nome);
-//         for (cont = 0; cont < strlen(user.nome); cont++)
-//         {
-//             if (user.nome[cont] == ' ')
-//             {
-//                 space = 1;
-//             }
-//         }
-//         if (space == 0)
-//         {
-//             printf("ERRO! Nome inválido.\n");
-//         }
-//     } while (space == 0);
+    printf("%s\n", n_user.name);
+    // printf("%s\n", n_user.login);
 
-//     char sexo;
-//     do
-//     {
-//         fflush(stdin);
-//         printf(">> QUAL SEU SEXO (M / F):\n");
-//         scanf("%c", &sexo);
+    do
+    {
+        char sexo[2];
+        _getData(&sexo, _String, "QUAL SEU SEXO (M / F)", _Warning);
+        if (toupper(sexo[0]) != 'M' && toupper(sexo[0]) != 'F')
+        {
+            printf("\n");
+            _msgDanger("ERRO!", "Alternativa inválida.");
+            continue;
+        }
+        n_user.genre = (toupper(sexo[0]) == 'M') ? M : F;
+        break;
+    } while (_True);
 
-//         if (sexo != 'M' && sexo != 'F')
-//         {
-//             printf("ERRO! Alternativa inválida.\n");
-//         }
-//     } while (sexo != 'M' && sexo != 'F');
+    do
+    {
+        char login[40];
+        _getData(&login, _String, "DIGITE SEU LOGIN", _Warning);
+        printf("%s\n", login);
+        if (strlen(login) > 20)
+        {
+            printf("\n");
+            _msgDanger("ERRO!", "Login maior que 20 letras.");
+            continue;
+        }
+        n_user.login = login;
+        break;
+    } while (_True);
 
-//     do
-//     {
-//         int spc;
+    printf("%s\n", n_user.login);
 
-//         do
-//         {
-//             spc = 0;
-//             do
-//             {
-//                 fflush(stdin);
-//                 printf(">> NOME DE USUÁRIO (MAX - 20):\n");
-//                 fgets(user.login);
+    do
+    {
+        int senha1, senha2;
 
-//                 if (strlen(user.login) > 20)
-//                 {
-//                     printf("ERRO! Nome de usuário deve ter no maximo 20 caracteres.\n");
-//                 }
+        _getData(&senha1, _Int, "DIGITE UMA SENHA", _Warning);
+        _getData(&senha2, _Int, "DIGITE NOVAMENTE A SENHA", _Warning);
 
-//             } while (strlen(user.login) > 20);
+        if ((senha1 != senha2) || (senha1 > 99999))
+        {
+            printf("\n");
+            _msgDanger("ERRO!", "Senhas diferentes ou maior que 99.999.");
+            continue;
+        }
 
-//             for (cont = 0; cont < strlen(
-//         }
-//     } while (spc == 1);
-//     if (_BD_validarUserName(user.login) == 1)
-//     {
-//         printf("Login j� utilizado por outro usu�rio :(\n");
-//     }
-//     else
-//     {
-//         if (_BD_validarUserName(user.login) == -1)
-//         {
-//             erro = 1;
-//         }
-//         else
-//         {
-//             if (_BD_validarUserName(user.login) == -2)
-//             {
-//                 erro = 1;
-//                 _conStatus02();
-//             }
-//             else
-//             {
-//                 if (_BD_validarUserName(user.login) == -3)
-//                 {
-//                     erro = 1;
-//                     _conStatus03();
-//                 }
-//                 else
-//                 {
-//                     erro = 0;
-//                 }
-//             }
-//         }
-//     }
-// }
-// while (erro != 0)
-//     ;
+        n_user.password = senha1;
+        break;
+    } while (_True);
 
-// int senhaR;
-// do
-// {
-//     do
-//     {
-//         printf(">> DIGITE UMA SENHA (APENAS N�MEROS, MAX - 5):\n");
-//         fflush(stdin);
-//         scanf("%d", &user.senha);
-//         if (user.senha > 99999)
-//         {
-//             printf("ERRO! Senha deve ter no maximo 5 digitos.\n");
-//         }
-//     } while (user.senha > 99999);
+    printf("%s\n", n_user.name);
+    printf("%s\n", n_user.login);
+    exit(1);
 
-//     printf(">> REPITA A SENHA DE ACESSO:\n");
-//     fflush(stdin);
-//     scanf("%d", &senhaR);
-//     if (senhaR != user.senha)
-//     {
-//         printf("ERRO! Senhas n�o coincidem.\n");
-//     }
-// } while (senhaR != user.senha);
+    if (_dbAddUser(n_user))
+    {
+        printf("\n");
+        _confirmOk("SUCESSO!", "Nome do usuário atualizado.", _Success);
+        return _imcMenu();
+    }
 
-// if (connObj.conn = mysql_init(0))
-// {
-//     if (connObj.conn = mysql_real_connect(connObj.conn, dbConfig.host, dbConfig.user, dbConfig.pass, dbConfig.database, dbConfig.port, NULL, 0))
-//     {
-//         char query[200];
-//         sprintf(query, "INSERT INTO t_Users (nome, sexo, login, senha) VALUES ('%s','%c','%s','%d')", user.nome, user.sexo, user.login, user.senha);
-//         connObj.qstate = mysql_query(connObj.conn, query);
-//         if (!connObj.qstate)
-//         {
-//             printf("DADOS INSERIDOS COM SUCESSO!\n");
-//         }
-//         else
-//         {
-//             int op;
-//             printf("ERRO! Algo deu errado...\n");
-//             printf(" [1] - Tentar Novamente / [2] - voltar\n");
-//             do
-//             {
-//                 printf(" ");
-//                 scanf("%d", &op);
-//                 if (op == 1)
-//                 {
-//                     system(CMD_CLEAR);
-//                     _imcCad();
-//                 }
-//                 else
-//                 {
-//                     if (op == 2)
-//                     {
-//                         _imcMenu();
-//                     }
-//                     else
-//                     {
-//                         printf("Op��o Inv�lida! :(");
-//                     }
-//                 }
-//             } while (op != 1 && op != 2);
-//         }
-//     }
-//     else
-//     {
-//         _conStatus02();
-//     }
-// }
-// else
-// {
-//     _conStatus03();
-// }
-// }
+    if (_confirmYesNo("ERRO!", "Falha em cadastrar novo usuário. Tentar novamente?", _Danger))
+    {
+        return _imcAddUser();
+    }
+    return _imcMenu();
+}
 
 void _imcUpdateUser()
 {
@@ -688,7 +609,7 @@ void _imcUpdateUser()
             if (strlen(fn) > 60)
             {
                 printf("\n");
-                _confirmOk("ERRO!", "Nome maior que 60 letras.", _Danger);
+                _msgDanger("ERRO!", "Nome maior que 60 letras.");
                 continue;
             }
             for (int i = 0; i < strlen(fn); i++)
@@ -706,18 +627,26 @@ void _imcUpdateUser()
         }
         break;
     case 2:
-        // do
-        // {
-        //     char sexo;
-        //     fflush(stdin);
-        //     printf(">> QUAL SEU SEXO (M / F):\n");
-        //     scanf("%c", &sexo);
-        //     update.sexo = toupper(sexo);
-        //     if (update.sexo != 'M' && update.sexo != 'F')
-        //     {
-        //         printf("ERRO! Alternativa inv�lida.\n");
-        //     }
-        // } while (update.sexo != 'M' && update.sexo != 'F');
+        do
+        {
+            char sexo[1];
+            _getData(&sexo, _String, "QUAL SEU SEXO (M / F)", _Warning);
+            if (toupper(sexo[0]) != 'M' && toupper(sexo[0]) != 'F')
+            {
+                printf("\n");
+                _msgDanger("ERRO!", "Alternativa inválida.");
+                continue;
+            }
+            u.genre = (toupper(sexo[0]) == 'M') ? M : F;
+            break;
+        } while (_True);
+        if (_dbUpdateUser(&user, u))
+        {
+            printf("\n");
+            _confirmOk("SUCESSO!", "Nome do usuário atualizado.", _Success);
+            _imcUpdateUser();
+        }
+        break;
         break;
     case 3:
         do
@@ -727,7 +656,7 @@ void _imcUpdateUser()
             if (strlen(login) > 20)
             {
                 printf("\n");
-                _confirmOk("ERRO!", "Login maior que 20 letras.", _Danger);
+                _msgDanger("ERRO!", "Login maior que 20 letras.");
                 continue;
             }
             u.login = login;
@@ -749,7 +678,7 @@ void _imcUpdateUser()
             if (user.password != senha_atual)
             {
                 printf("\n");
-                _confirmOk("ERRO!", "Senha atual inválida.", _Danger);
+                _msgDanger("ERRO!", "Senha atual inválida.");
                 continue;
             }
 
@@ -759,7 +688,7 @@ void _imcUpdateUser()
             if ((senha1 != senha2) || (senha1 > 99999))
             {
                 printf("\n");
-                _confirmOk("ERRO!", "Senhas diferentes ou maior que 99.999.", _Danger);
+                _msgDanger("ERRO!", "Senhas diferentes ou maior que 99.999.");
                 continue;
             }
 
@@ -1187,6 +1116,40 @@ int _dbInsertIMC(t_User *_user, float _imc)
     }
 
     mysql_close(connObj.conn);
+    return _True;
+}
+
+int _dbAddUser(t_User _user)
+{
+    // _dbSetup();
+    _dbGetConfig(&dbConfig);
+
+    if (!_dbInit() || !_dbConnect(&dbConfig))
+    {
+        return _False;
+    }
+
+    char s = _user.genre == M ? 'M' : 'F';
+
+    printf("%s\n", _user.name);
+    printf("%s\n", _user.login);
+    exit(1);
+
+    char query[200];
+    sprintf(query, "INSERT INTO usuarios (nome, sexo, login, senha) VALUES ('%s','%c','%s','%d')",
+            _user.name,
+            s,
+            _user.login,
+            _user.password);
+
+    if (
+        mysql_query(connObj.conn, query) != MYSQL_STATUS_READY ||
+        (int)mysql_affected_rows(connObj.conn) == 0)
+    {
+        mysql_close(connObj.conn);
+        return _False;
+    }
+
     return _True;
 }
 
