@@ -256,7 +256,7 @@ void _mainMenu()
         _starWarsRobos();
         break;
     case 2:
-        _imcMenu();
+        (user.id != 0) ? _imcSession() : _imcMenu();
         break;
     case 3:
         _dbCheckConn();
@@ -375,10 +375,6 @@ void _imcMenu()
     case 9:
         _mainMenu();
         break;
-    case 10:
-        _processLogout();
-        _imcMenu();
-        break;
     default:
         _confirmOk("Erro", "Opção inválida.", _Danger);
         _imcMenu();
@@ -467,7 +463,7 @@ void _imcSession()
         _imcSession();
         break;
     case 9:
-        _imcMenu();
+        (user.id != 0) ? _mainMenu() : _imcMenu();
         break;
     case 10:
         _processLogout();
@@ -661,6 +657,7 @@ void _imcSession()
 
 void _imcUpdateUser()
 {
+    setbuf(stdin, NULL);
     t_User u;
     u.name = user.name;
     u.genre = user.genre;
@@ -688,9 +685,25 @@ void _imcUpdateUser()
         _imcSession();
         break;
     case 1:
-        char n[60];
-        _getData(&n, _String, "DIGITE SEU NOME COMPLETO", _Warning);
-        u.name = n;
+        do
+        {
+            char n1[60], n2[60], fn[120];
+            _getData(&n1, _String, "DIGITE SEU NOME", _Warning);
+            _getData(&n2, _String, "DIGITE SEU SOBRENOME", _Warning);
+            sprintf(fn, "%s %s", n1, n2);
+            if (strlen(fn) > 60)
+            {
+                printf("\n");
+                _confirmOk("ERRO!", "Nome maior que 60 letras.", _Danger);
+                continue;
+            }
+            for (int i = 0; i < strlen(fn); i++)
+            {
+                fn[i] = toupper(fn[i]);
+            }
+            u.name = fn;
+            break;
+        } while (_True);
         if (_dbUpdateUser(&user, u))
         {
             printf("\n");
@@ -698,105 +711,55 @@ void _imcUpdateUser()
             _imcUpdateUser();
         }
         break;
-    // case 2:
-    //     do
-    //     {
-    //         char sexo;
-    //         fflush(stdin);
-    //         printf(">> QUAL SEU SEXO (M / F):\n");
-    //         scanf("%c", &sexo);
-    //         update.sexo = toupper(sexo);
-    //         if (update.sexo != 'M' && update.sexo != 'F')
-    //         {
-    //             printf("ERRO! Alternativa inv�lida.\n");
-    //         }
-    //     } while (update.sexo != 'M' && update.sexo != 'F');
-    //     break;
-    // case 3:
+    case 2:
+        // do
+        // {
+        //     char sexo;
+        //     fflush(stdin);
+        //     printf(">> QUAL SEU SEXO (M / F):\n");
+        //     scanf("%c", &sexo);
+        //     update.sexo = toupper(sexo);
+        //     if (update.sexo != 'M' && update.sexo != 'F')
+        //     {
+        //         printf("ERRO! Alternativa inv�lida.\n");
+        //     }
+        // } while (update.sexo != 'M' && update.sexo != 'F');
+        break;
+    case 3:
+        break;
+    case 4:
+        do
+        {
+            int senha_atual, senha1, senha2;
+            _getData(&senha_atual, _Int, "DIGITE SEU SENHA ATUAL", _Warning);
 
-    //     do
-    //     {
-    //         int spc;
-    //         do
-    //         {
-    //             spc = 0;
-    //             do
-    //             {
-    //                 fflush(stdin);
-    //                 printf(">> NOME DE USU�RIO (MAX - 20):\n");
-    //                 fgets(update.login);
-    //                 if (strlen(update.login) > 20)
-    //                 {
-    //                     printf("ERRO! Nome de usu�rio deve ter no maximo 20 caracteres.\n");
-    //                 }
-    //             } while (strlen(update.login) > 20);
+            if (user.password != senha_atual)
+            {
+                printf("\n");
+                _confirmOk("ERRO!", "Senha atual inválida.", _Danger);
+                continue;
+            }
 
-    //             for (cont = 0; cont < strlen(update.login); cont++)
-    //             {
-    //                 if (update.login[cont] == ' ')
-    //                 {
-    //                     printf("ERRO! N�o pode haver espa�os.\n");
-    //                     spc = 1;
-    //                 }
-    //                 break;
-    //             }
-    //         } while (spc == 1);
-    //         if (_BD_validarUserName(update.login) == 1)
-    //         {
-    //             printf("Login j� utilizado por outro usu�rio :(\n");
-    //         }
-    //         else
-    //         {
-    //             if (_BD_validarUserName(update.login) == -1)
-    //             {
-    //                 erro = 1;
-    //             }
-    //             else
-    //             {
-    //                 if (_BD_validarUserName(update.login) == -2)
-    //                 {
-    //                     erro = 1;
-    //                     _conStatus02();
-    //                 }
-    //                 else
-    //                 {
-    //                     if (_BD_validarUserName(update.login) == -3)
-    //                     {
-    //                         erro = 1;
-    //                         _conStatus03();
-    //                     }
-    //                     else
-    //                     {
-    //                         erro = 0;
-    //                     }
-    //                 }
-    //             }
-    //         }
-    //     } while (erro != 0);
-    //     break;
-    // case 4:
-    //     do
-    //     {
-    //         do
-    //         {
-    //             printf(">> DIGITE UMA SENHA (APENAS N�MEROS, MAX - 5):\n");
-    //             fflush(stdin);
-    //             scanf("%d", &update.senha);
-    //             if (update.senha > 99999)
-    //             {
-    //                 printf("ERRO! Senha deve ter no maximo 5 digitos.\n");
-    //             }
-    //         } while (update.senha > 99999);
+            _getData(&senha1, _Int, "DIGITE SEU NOVA SENHA", _Warning);
+            _getData(&senha2, _Int, "DIGITE NOVAMENTE A SENHA", _Warning);
 
-    //         printf(">> REPITA A SENHA DE ACESSO:\n");
-    //         fflush(stdin);
-    //         scanf("%d", &senhaR);
-    //         if (senhaR != update.senha)
-    //         {
-    //             printf("ERRO! Senhas n�o coincidem.\n");
-    //         }
-    //     } while (senhaR != update.senha);
-    //     break;
+            if ((senha1 != senha2) || (senha1 > 99999))
+            {
+                printf("\n");
+                _confirmOk("ERRO!", "Senhas diferentes ou maior que 99.999.", _Danger);
+                continue;
+            }
+
+            u.password = senha1;
+            break;
+        } while (_True);
+        if (_dbUpdateUser(&user, u))
+        {
+            printf("\n");
+            _confirmOk("SUCESSO!", "Senha atualizado.", _Success);
+            _imcUpdateUser();
+        }
+        break;
     default:
         _confirmOk("Erro", "Opção inválida.", _Danger);
         _imcUpdateUser();
