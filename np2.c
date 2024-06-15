@@ -411,12 +411,6 @@ void _imcLogin()
     }
 }
 
-void _imcExibirImc()
-{
-
-    _BD_exibirImc();
-}
-
 // // DELETA CADASTRO DE USU�RIO
 // void _imcDelCadImc(char login[20], int senha)
 // {
@@ -726,6 +720,25 @@ void _imcUpdateUser()
         // } while (update.sexo != 'M' && update.sexo != 'F');
         break;
     case 3:
+        do
+        {
+            char login[40];
+            _getData(&login, _String, "DIGITE NOVO LOGIN", _Warning);
+            if (strlen(login) > 20)
+            {
+                printf("\n");
+                _confirmOk("ERRO!", "Login maior que 20 letras.", _Danger);
+                continue;
+            }
+            u.login = login;
+            break;
+        } while (_True);
+        if (_dbUpdateUser(&user, u))
+        {
+            printf("\n");
+            _confirmOk("SUCESSO!", "Login atualizado.", _Success);
+            _imcUpdateUser();
+        }
         break;
     case 4:
         do
@@ -918,48 +931,6 @@ void _imcAddIMC()
 
     printf("\n");
     _confirmOk("Data/Hora", _dateTime(), _Danger);
-}
-
-void _BD_exibirImc()
-{
-    _dbSetup();
-    _dbGetConfig(&dbConfig);
-
-    if (!_dbInit() || !_dbConnect(&dbConfig))
-    {
-        return;
-    }
-
-    printf("\tREGISTROS:\n\n");
-
-    char query[200];
-
-    fflush(stdin);
-    sprintf(query, "SELECT * FROM registros WHERE usuarios_id = '%d'", user.id);
-
-    if (
-        mysql_query(connObj.conn, query) != MYSQL_STATUS_READY ||
-        ((connObj.res = mysql_store_result(connObj.conn)) && (int)mysql_num_rows(connObj.res) == 0))
-    {
-        _msgDanger("ERRO!", "Nenhum registro encontrado.");
-        mysql_close(connObj.conn);
-        return;
-    }
-
-    int cont = 1;
-    char reg[40];
-
-    MYSQL_ROW row;
-
-    while ((row = mysql_fetch_row(connObj.res)))
-    {
-        sprintf(reg, "\t%d - [ %s ] - IMC: %s\n", cont, row[3], row[2]);
-        printf("%s", reg);
-        fflush(stdout);
-        cont++;
-    }
-    printf("\n");
-    mysql_close(connObj.conn);
 }
 
 // // DELETA CONTA CADASTRADA

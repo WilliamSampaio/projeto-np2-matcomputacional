@@ -97,18 +97,16 @@ void _mainMenu();
 void _starWarsRobos();
 void _startNP2();
 
-void _imcTxtTitle();
-void _imcMenu();
-void _imcMenu();
-void _imcCad();
-
-void _imcLogin();
-void _imcReport();
-// void _imcExibirImc(char *, int);
-// void _imcDelCadImc(char *, int);
-void _imcUpdateUser();
-void _imcSession();
 void _imcAddIMC();
+void _imcLogin();
+void _imcMenu();
+void _imcReport();
+void _imcSession();
+void _imcTxtTitle();
+void _imcUpdateUser();
+
+// void _imcCad();
+// void _imcDelCadImc(char *, int);
 
 // void load();
 
@@ -116,17 +114,14 @@ void _writeConfig(FILE **);
 void _dbSetup();
 void _dbGetConfig(t_DBInfo *);
 void _dbUpdateConfig();
+void _dbCheckConn();
 int _dbInit();
 int _dbConnect(t_DBInfo *);
-
-void _dbCheckConn();
-
-void _dbCreateUser();
-void _BD_atualizarCad();
-void _BD_exibirImc();
-// void _BD_delCad(char *, int);
-
 int _dbValidateLogin(t_User *, char *, int);
 int _dbInsertIMC(t_User *, float);
 int _dbUpdateUser(t_User *, t_User);
 t_IMC *_dbGetIMCbyUserId(t_User *);
+
+void _dbCreateUser();
+void _BD_atualizarCad();
+// void _BD_delCad(char *, int);
