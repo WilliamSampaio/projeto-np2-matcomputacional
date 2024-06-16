@@ -1,3 +1,13 @@
+#pragma once
+
+#ifdef _WIN32
+#define CMD_CLEAR "cls"
+#elif linux
+#define CMD_CLEAR "clear"
+#endif
+
+#define _DATETIME_ __DATE__ " - " __TIME__
+
 // Regular text
 #define BLK "\e[0;30m"
 #define RED "\e[0;31m"
@@ -70,3 +80,30 @@
 
 // Reset
 #define COLOR_RESET "\e[0m"
+
+enum _NP2_boolean
+{
+    _False,
+    _True
+};
+
+enum _NP2_data_types
+{
+    _String,
+    _Int,
+    _Float
+};
+
+enum _NP2_status
+{
+    _Success,
+    _Info,
+    _Danger,
+    _Warning
+};
+
+enum _NP2_genres
+{
+    M,
+    F
+};

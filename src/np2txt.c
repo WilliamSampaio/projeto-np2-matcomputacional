@@ -1,13 +1,7 @@
-#ifdef _WIN32
-#include <windows.h>
-#elif linux
-#include <unistd.h>
-#endif
-
 #include <stdio.h>
 #include <string.h>
 
-#include "np2ansi-color-codes.h"
+#include "constants.h"
 #include "np2txt.h"
 
 void txtTeam()
@@ -54,7 +48,6 @@ void txtExit()
     printf("                                                                                \n");
     printf("                                                                                \n");
     printf(COLOR_RESET);
-    sleep(1);
 }
 
 void txtStarWarsRobos()

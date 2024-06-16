@@ -1,10 +1,10 @@
-#include <pthread.h> /* pthread functions and data structures */
+#include <pthread.h>
 
 #include "np2.h"
 
 int main(int argc, char *argv[])
 {
-    _startNP2();
+    _start_();
     pthread_exit(NULL);
     return 0;
 }

@@ -1,34 +1,31 @@
-#ifdef _WIN32
-#include <windows.h>
-#elif linux
-#include <unistd.h>
-#endif
-
 #include <locale.h>
 #include <mysql/mysql.h>
 #include <pthread.h>
 #include <SDL2/SDL.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 
+#include "constants.h"
+#include "database.h"
 #include "np2.h"
 #include "np2txt.h"
-#include "np2ansi-color-codes.h"
+#include "terminal.h"
 
-const char *fileDb = "configdb";
+const char *CONFIG_DB_FILENAME = "configdb";
 
-FILE *_configDb;
+FILE *_config_db_file;
 
-t_MySQLConn connObj;
-t_DBInfo dbConfig;
-t_User user;
+conn_info_t conn_info;
+MYSQL *conn;
+tbl_user_t user;
 
-pthread_t soundPthreadId;
+pthread_t sound_pthread_id;
 
 int playing = _False;
 
-void user_init(t_User *_user)
+void _user_init(tbl_user_t *_user)
 {
     _user->id = 0;
     _user->name = "";
@@ -37,78 +34,20 @@ void user_init(t_User *_user)
     _user->password = 0;
 }
 
-void _msgSuccess(char *_title, char *_message)
+void _connect()
 {
-    printf("%s::: %s:%s %s%s\n", BHGRN, _title, GRN, _message, COLOR_RESET);
-}
-
-void _msgInfo(char *_title, char *_message)
-{
-    printf("%s::: %s:%s %s%s\n", BHBLU, _title, BLU, _message, COLOR_RESET);
-}
-
-void _msgDanger(char *_title, char *_message)
-{
-    printf("%s::: %s:%s %s%s\n", BHRED, _title, RED, _message, COLOR_RESET);
-}
-
-void _msgWarning(char *_title, char *_message)
-{
-    printf("%s::: %s:%s %s%s\n", BHYEL, _title, YEL, _message, COLOR_RESET);
-}
-
-void _msg(char *_title, char *_message, int _status)
-{
-    switch (_status)
+    _dbSetup();
+    _dbGetConfig(&conn_info);
+    conn = get_conn(&conn_info);
+    if (conn == NULL)
     {
-    case _Success:
-        _msgSuccess(_title, _message);
-        break;
-    case _Info:
-        _msgInfo(_title, _message);
-        break;
-    case _Danger:
-        _msgDanger(_title, _message);
-        break;
-    case _Warning:
-        _msgWarning(_title, _message);
-        break;
+        _confirm("ERRO!", "Conexão falhou.", "Pressione qualquer tecla para continuar...", _Danger);
+        return;
     }
+    _confirm("SUCESSO!", "Conexão estabelecida. " _DATETIME_, "Pressione qualquer tecla para continuar...", _Success);
 }
 
-int _confirmYesNo(char *_title, char *_message, int _status)
-{
-    _msg(_title, _message, _status);
-    do
-    {
-        setbuf(stdin, NULL);
-        char op[3];
-        printf("Confirm (y/n): ");
-        scanf("%s", op);
-        if (toupper(op[0]) == 'Y')
-        {
-            return _True;
-        }
-        else if (toupper(op[0]) == 'N')
-        {
-            return _False;
-        }
-        else
-        {
-            _msgDanger("ERROR!", "Invalid option.");
-        }
-    } while (1);
-}
-
-void _confirmOk(char *_title, char *_message, int _status)
-{
-    _msg(_title, _message, _status);
-    printf("Press any key to continue...");
-    setbuf(stdin, NULL);
-    getchar();
-}
-
-void _getData(void *_var, int _type, char *_message, int _status)
+void _get_data(void *_var, int _type, char *_message, int _status)
 {
     setbuf(stdin, NULL);
     _msg(_message, "", _status);
@@ -130,17 +69,12 @@ void _getData(void *_var, int _type, char *_message, int _status)
     }
 }
 
-char *_dateTime()
-{
-    return __DATE__ " - " __TIME__;
-}
-
-void _setPtBRLocale()
+void _set_ptbr_locale()
 {
     setlocale(LC_ALL, "Portuguese");
 }
 
-void *_sdl2PlayWav(void *_wavFilename)
+void *_sdl2_play_sound(void *_wavFilename)
 {
     // pthread_t tid;
     // tid = pthread_self();
@@ -173,13 +107,13 @@ void *_sdl2PlayWav(void *_wavFilename)
     pthread_exit(NULL); /* terminate the thread */
 }
 
-void _playSound()
+void _play_sound()
 {
     int rc;                                               /* return value                           */
     char *wav = "sound/Blue (Da Ba Dee) - Eiffel 65.wav"; /* data passed to the new thread          */
 
     /* create a new thread that will execute 'playSound' */
-    rc = pthread_create(&soundPthreadId, NULL, _sdl2PlayWav, (void *)wav);
+    rc = pthread_create(&sound_pthread_id, NULL, _sdl2_play_sound, (void *)wav);
     if (rc) /* could not create thread */
     {
         printf("\n ERROR: return code from pthread_create is %d \n", rc);
@@ -188,23 +122,24 @@ void _playSound()
     playing = _True;
 }
 
-void _stopSound()
+void _stop_sound()
 {
-    pthread_cancel(soundPthreadId);
+    pthread_cancel(sound_pthread_id);
     playing = _False;
 }
 
-void _exitNP2()
+void _exit_()
 {
-    if (_confirmYesNo("SAIR", "Você deseja realmente SAIR?", _Danger) == _True)
+    if (_confirm_options("SAIR", "Você deseja realmente SAIR?", "Confirmar", 'S', 'n', _Danger) == _True)
     {
-        system(CMD_CLEAR);
-        // txtExit();
+        close_conn(&conn);
+        _clear_terminal();
+        txtExit();
         exit(0);
     }
 }
 
-void _logoutTxtOption()
+void _logout_txt_option()
 {
     if (user.id != 0)
     {
@@ -215,17 +150,17 @@ void _logoutTxtOption()
     }
 }
 
-void _processLogout()
+void _process_logout()
 {
-    if (user.id != 0 && _confirmYesNo("LOGOUT", "Finalizar sessão?", _Warning))
+    if (user.id != 0 && _confirm_options("LOGOUT", "Finalizar sessão?", "Confirmar", 'S', 'N', _Warning))
     {
-        user_init(&user);
+        _user_init(&user);
     }
 }
 
-void _mainMenu()
+void _main_menu()
 {
-    system(CMD_CLEAR);
+    _clear_terminal();
     printf("\n");
     _msgSuccess("MENU PRINCÍPAL", "\n");
     _msgSuccess("[1]", "ROBÔS STAR WARS");
@@ -238,60 +173,60 @@ void _mainMenu()
     printf("\n");
     _msgSuccess("[9]", "SOBRE");
 
-    _logoutTxtOption();
+    _logout_txt_option();
 
     _msgSuccess("[0]", "SAIR");
     printf("\n");
 
     int op;
-    _getData(&op, _Int, "Digite o número da opção", _Success);
+    _get_data(&op, _Int, "Digite o número da opção", _Success);
     printf("\n");
 
     switch (op)
     {
     case 0:
-        _exitNP2();
-        _mainMenu();
+        _exit_();
+        _main_menu();
         break;
     case 1:
-        _starWarsRobos();
+        _star_wars_robos();
         break;
     case 2:
-        (user.id != 0) ? _imcSession() : _imcMenu();
+        (user.id != 0) ? _imc_session() : _imc_menu();
         break;
     case 3:
-        _dbCheckConn();
-        _mainMenu();
+        _connect();
+        _main_menu();
         break;
     case 4:
         _dbUpdateConfig();
-        _dbCheckConn();
-        _mainMenu();
+        _connect();
+        _main_menu();
         break;
     case 5:
-        playing ? _stopSound() : _playSound();
-        _mainMenu();
+        playing ? _stop_sound() : _play_sound();
+        _main_menu();
         break;
     case 9:
-        system(CMD_CLEAR);
+        _clear_terminal();
         txtTeam();
-        _confirmOk("Data/Hora", _dateTime(), _Danger);
-        _mainMenu();
+        _confirm("Data/Hora", _DATETIME_, "Continuar", _Danger);
+        _main_menu();
         break;
     case 10:
-        _processLogout();
-        _mainMenu();
+        _process_logout();
+        _main_menu();
         break;
     default:
-        _confirmOk("Erro", "Opção inválida.", _Danger);
-        _mainMenu();
+        _confirm("Erro", "Opção inválida.", "Continuar", _Danger);
+        _main_menu();
         break;
     }
 }
 
-void _starWarsRobos()
+void _star_wars_robos()
 {
-    system(CMD_CLEAR);
+    _clear_terminal();
     txtStarWarsRobos();
 
     int op;
@@ -304,45 +239,46 @@ void _starWarsRobos()
         _msgSuccess("[0]", "SAIR");
         printf("\n");
 
-        _getData(&op, _Int, "Digite o número da opção", _Success);
+        _get_data(&op, _Int, "Digite o número da opção", _Success);
         printf("\n");
 
         switch (op)
         {
         case 0:
-            _exitNP2();
-            _starWarsRobos();
+            _exit_();
+            _star_wars_robos();
             break;
         case 1:
-            _starWarsRobos();
+            _star_wars_robos();
             break;
         case 2:
-            _mainMenu();
+            _main_menu();
             break;
         default:
-            _confirmOk("Erro", "Opção inválida.", _Danger);
-            _starWarsRobos();
+            _confirm("Erro", "Opção inválida.", "Continuar", _Danger);
+            _star_wars_robos();
             break;
         }
     } while (op < 0 || op > 2);
 }
 
-void _startNP2()
+void _start_()
 {
-    user_init(&user);
-    _playSound();
-    _mainMenu();
+    _connect();
+    _user_init(&user);
+    _play_sound();
+    _main_menu();
 }
 
 void _imcTxtTitle()
 {
-    system(CMD_CLEAR);
+    _clear_terminal();
     printf("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::\n");
     printf(":: : : : : : : : SISTEMA - INDICE DE MASSA CORPORAL (com MySQL) : : : : : : : ::\n");
     printf("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::\n\n");
 }
 
-void _imcMenu()
+void _imc_menu()
 {
     _imcTxtTitle();
     _msgSuccess("[1]", "ENTRAR");
@@ -351,34 +287,34 @@ void _imcMenu()
     _msgSuccess("[9]", "VOLTAR AO MENU PRINCÍPAL");
     printf("\n");
 
-    _logoutTxtOption();
+    _logout_txt_option();
 
     _msgSuccess("[0]", "SAIR");
     printf("\n");
 
     int op;
-    _getData(&op, _Int, "Digite o número da opção", _Success);
+    _get_data(&op, _Int, "Digite o número da opção", _Success);
     printf("\n");
 
     switch (op)
     {
     case 0:
-        _exitNP2();
-        _imcMenu();
+        _exit_();
+        _imc_menu();
         break;
     case 1:
         _imcLogin();
-        _imcMenu();
+        _imc_menu();
         break;
     case 2:
         _imcAddUser();
         break;
     case 9:
-        _mainMenu();
+        _main_menu();
         break;
     default:
-        _confirmOk("Erro", "Opção inválida.", _Danger);
-        _imcMenu();
+        _confirm("Erro", "Opção inválida.", "Continuar", _Danger);
+        _imc_menu();
         break;
     }
 }
@@ -390,16 +326,16 @@ void _imcLogin()
 
     _imcTxtTitle();
 
-    _getData(&login, _String, "LOGIN", _Warning);
-    _getData(&senha, _Int, "SENHA", _Warning);
+    _get_data(&login, _String, "LOGIN", _Warning);
+    _get_data(&senha, _Int, "SENHA", _Warning);
 
-    if (_dbValidateLogin(&user, login, senha))
+    if (_dbValidateLogin(&user, login, senha, &conn))
     {
-        return _imcSession();
+        return _imc_session();
     }
 
     printf("\n");
-    if (_confirmYesNo("ERRO!", "Login ou senha inválida. Tentar novamente?", _Danger))
+    if (_confirm_options("ERRO!", "Login ou senha inválida. Tentar novamente?", "Digite (S)im ou (N)ão", 'S', 'N', _Danger))
     {
         return _imcLogin();
     }
@@ -412,7 +348,7 @@ void _imcLogin()
 //     _BD_delCad(login, senha);
 // }
 
-void _imcSession()
+void _imc_session()
 {
     _imcTxtTitle();
     _msgSuccess("[1]", "REGISTRAR NOVO IMC");
@@ -424,49 +360,49 @@ void _imcSession()
     _msgSuccess("[0]", "SAIR");
     printf("\n");
 
-    _logoutTxtOption();
+    _logout_txt_option();
 
     _msgSuccess("[-99]", "APAGAR CADASTRO");
     printf("\n");
 
     int op;
-    _getData(&op, _Int, "Digite o número da opção", _Success);
+    _get_data(&op, _Int, "Digite o número da opção", _Success);
     printf("\n");
 
     switch (op)
     {
     case 0:
-        _exitNP2();
+        _exit_();
         break;
     case 1:
         _imcAddIMC();
-        _imcSession();
+        _imc_session();
         break;
     case 2:
         _imcReport();
-        _imcSession();
+        _imc_session();
         break;
     case 4:
         _imcUpdateUser();
-        _imcSession();
+        _imc_session();
         break;
     case 9:
-        (user.id != 0) ? _mainMenu() : _imcMenu();
+        (user.id != 0) ? _main_menu() : _imc_menu();
         break;
     case 10:
-        _processLogout();
-        _imcMenu();
+        _process_logout();
+        _imc_menu();
         break;
     case -99:
-        system(CMD_CLEAR);
+        _clear_terminal();
         _imcTxtTitle();
         // _BD_delCad(login, senha);
-        _confirmOk("Data/Hora", _dateTime(), _Danger);
-        _imcSession();
+        // _confirm("Data/Hora", _DATETIME_, _Danger);
+        _imc_session();
         break;
     default:
-        _confirmOk("Erro", "Opção inválida.", _Danger);
-        _imcSession();
+        _confirm("Erro", "Opção inválida.", "Continuar", _Danger);
+        _imc_session();
         break;
     }
 }
@@ -474,7 +410,7 @@ void _imcSession()
 void _imcAddUser()
 {
     setbuf(stdin, NULL);
-    t_User n_user;
+    tbl_user_t n_user;
 
     _imcTxtTitle();
     _msgSuccess("NOVO USUÁRIO", "");
@@ -483,8 +419,8 @@ void _imcAddUser()
     do
     {
         char n1[60], n2[60], fn[120];
-        _getData(&n1, _String, "DIGITE SEU NOME", _Warning);
-        _getData(&n2, _String, "DIGITE SEU SOBRENOME", _Warning);
+        _get_data(&n1, _String, "DIGITE SEU NOME", _Warning);
+        _get_data(&n2, _String, "DIGITE SEU SOBRENOME", _Warning);
         sprintf(fn, "%s %s", n1, n2);
         if (strlen(fn) > 60)
         {
@@ -506,7 +442,7 @@ void _imcAddUser()
     do
     {
         char sexo[2];
-        _getData(&sexo, _String, "QUAL SEU SEXO (M / F)", _Warning);
+        _get_data(&sexo, _String, "QUAL SEU SEXO (M / F)", _Warning);
         if (toupper(sexo[0]) != 'M' && toupper(sexo[0]) != 'F')
         {
             printf("\n");
@@ -520,7 +456,7 @@ void _imcAddUser()
     do
     {
         char login[40];
-        _getData(&login, _String, "DIGITE SEU LOGIN", _Warning);
+        _get_data(&login, _String, "DIGITE SEU LOGIN", _Warning);
         printf("%s\n", login);
         if (strlen(login) > 20)
         {
@@ -538,8 +474,8 @@ void _imcAddUser()
     {
         int senha1, senha2;
 
-        _getData(&senha1, _Int, "DIGITE UMA SENHA", _Warning);
-        _getData(&senha2, _Int, "DIGITE NOVAMENTE A SENHA", _Warning);
+        _get_data(&senha1, _Int, "DIGITE UMA SENHA", _Warning);
+        _get_data(&senha2, _Int, "DIGITE NOVAMENTE A SENHA", _Warning);
 
         if ((senha1 != senha2) || (senha1 > 99999))
         {
@@ -556,24 +492,24 @@ void _imcAddUser()
     printf("%s\n", n_user.login);
     exit(1);
 
-    if (_dbAddUser(n_user))
+    if (_dbAddUser(n_user, &conn))
     {
         printf("\n");
-        _confirmOk("SUCESSO!", "Nome do usuário atualizado.", _Success);
-        return _imcMenu();
+        _confirm("SUCESSO!", "Nome do usuário atualizado.", "Continuar", _Success);
+        return _imc_menu();
     }
 
-    if (_confirmYesNo("ERRO!", "Falha em cadastrar novo usuário. Tentar novamente?", _Danger))
+    if (_confirm_options("ERRO!", "Falha em cadastrar novo usuário.", "Tentar novamente? (S/N)", 'S', 'N', _Danger))
     {
         return _imcAddUser();
     }
-    return _imcMenu();
+    return _imc_menu();
 }
 
 void _imcUpdateUser()
 {
     setbuf(stdin, NULL);
-    t_User u;
+    tbl_user_t u;
     u.name = user.name;
     u.genre = user.genre;
     u.login = user.login;
@@ -591,20 +527,20 @@ void _imcUpdateUser()
     printf("\n");
 
     int op;
-    _getData(&op, _Int, "Digite o número da opção", _Success);
+    _get_data(&op, _Int, "Digite o número da opção", _Success);
     printf("\n");
 
     switch (op)
     {
     case 0:
-        _imcSession();
+        _imc_session();
         break;
     case 1:
         do
         {
             char n1[60], n2[60], fn[120];
-            _getData(&n1, _String, "DIGITE SEU NOME", _Warning);
-            _getData(&n2, _String, "DIGITE SEU SOBRENOME", _Warning);
+            _get_data(&n1, _String, "DIGITE SEU NOME", _Warning);
+            _get_data(&n2, _String, "DIGITE SEU SOBRENOME", _Warning);
             sprintf(fn, "%s %s", n1, n2);
             if (strlen(fn) > 60)
             {
@@ -619,10 +555,10 @@ void _imcUpdateUser()
             u.name = fn;
             break;
         } while (_True);
-        if (_dbUpdateUser(&user, u))
+        if (_dbUpdateUser(&user, u, &conn))
         {
             printf("\n");
-            _confirmOk("SUCESSO!", "Nome do usuário atualizado.", _Success);
+            _confirm("SUCESSO!", "Nome do usuário atualizado.", "Continuar", _Success);
             _imcUpdateUser();
         }
         break;
@@ -630,7 +566,7 @@ void _imcUpdateUser()
         do
         {
             char sexo[1];
-            _getData(&sexo, _String, "QUAL SEU SEXO (M / F)", _Warning);
+            _get_data(&sexo, _String, "QUAL SEU SEXO (M / F)", _Warning);
             if (toupper(sexo[0]) != 'M' && toupper(sexo[0]) != 'F')
             {
                 printf("\n");
@@ -640,10 +576,10 @@ void _imcUpdateUser()
             u.genre = (toupper(sexo[0]) == 'M') ? M : F;
             break;
         } while (_True);
-        if (_dbUpdateUser(&user, u))
+        if (_dbUpdateUser(&user, u, &conn))
         {
             printf("\n");
-            _confirmOk("SUCESSO!", "Nome do usuário atualizado.", _Success);
+            _confirm("SUCESSO!", "Nome do usuário atualizado.", "Continuar", _Success);
             _imcUpdateUser();
         }
         break;
@@ -652,7 +588,7 @@ void _imcUpdateUser()
         do
         {
             char login[40];
-            _getData(&login, _String, "DIGITE NOVO LOGIN", _Warning);
+            _get_data(&login, _String, "DIGITE NOVO LOGIN", _Warning);
             if (strlen(login) > 20)
             {
                 printf("\n");
@@ -662,10 +598,10 @@ void _imcUpdateUser()
             u.login = login;
             break;
         } while (_True);
-        if (_dbUpdateUser(&user, u))
+        if (_dbUpdateUser(&user, u, &conn))
         {
             printf("\n");
-            _confirmOk("SUCESSO!", "Login atualizado.", _Success);
+            _confirm("SUCESSO!", "Login atualizado.", "Continuar", _Success);
             _imcUpdateUser();
         }
         break;
@@ -673,7 +609,7 @@ void _imcUpdateUser()
         do
         {
             int senha_atual, senha1, senha2;
-            _getData(&senha_atual, _Int, "DIGITE SEU SENHA ATUAL", _Warning);
+            _get_data(&senha_atual, _Int, "DIGITE SEU SENHA ATUAL", _Warning);
 
             if (user.password != senha_atual)
             {
@@ -682,8 +618,8 @@ void _imcUpdateUser()
                 continue;
             }
 
-            _getData(&senha1, _Int, "DIGITE SEU NOVA SENHA", _Warning);
-            _getData(&senha2, _Int, "DIGITE NOVAMENTE A SENHA", _Warning);
+            _get_data(&senha1, _Int, "DIGITE SEU NOVA SENHA", _Warning);
+            _get_data(&senha2, _Int, "DIGITE NOVAMENTE A SENHA", _Warning);
 
             if ((senha1 != senha2) || (senha1 > 99999))
             {
@@ -695,33 +631,33 @@ void _imcUpdateUser()
             u.password = senha1;
             break;
         } while (_True);
-        if (_dbUpdateUser(&user, u))
+        if (_dbUpdateUser(&user, u, &conn))
         {
             printf("\n");
-            _confirmOk("SUCESSO!", "Senha atualizado.", _Success);
+            _confirm("SUCESSO!", "Senha atualizado.", "Continuar", _Success);
             _imcUpdateUser();
         }
         break;
     default:
-        _confirmOk("Erro", "Opção inválida.", _Danger);
+        _confirm("Erro", "Opção inválida.", "Continuar", _Danger);
         _imcUpdateUser();
         break;
     }
 }
 
-// // VERIFICA SE O NOME DE t_User JA EXISTE NO BD
+// // VERIFICA SE O NOME DE tbl_user_t JA EXISTE NO BD
 // int _BD_validarUserName(char *login)
 // {
 
 //     _dbSetup();
-//     _dbGetConfig(&dbConfig);
+//     _dbGetConfig(&conn_info);
 
 //     if (connObj.conn = mysql_init(0))
 //     {
-//         if (connObj.conn = mysql_real_connect(connObj.conn, dbConfig.host, dbConfig.user, dbConfig.pass, dbConfig.database, dbConfig.port, NULL, 0))
+//         if (connObj.conn = mysql_real_connect(connObj.conn, conn_info.host, conn_info.user, conn_info.pass, conn_info.database, conn_info.port, NULL, 0))
 //         {
 //             char query[200];
-//             sprintf(query, "select login from t_Users where login = '%s'", login);
+//             sprintf(query, "select login from tbl_user_ts where login = '%s'", login);
 //             connObj.qstate = mysql_query(connObj.conn, query);
 //             if (!connObj.qstate)
 //             {
@@ -762,7 +698,7 @@ void _imcReport()
 {
     _imcTxtTitle();
 
-    t_IMC *values = _dbGetIMCbyUserId(&user);
+    tbl_imc_t *values = _dbGetIMCbyUserId(&user, &conn);
 
     printf("+----------------------------------------------------------------+\n");
     printf("| %sNOME: %s%s%s\t\t\t\t\t\t |\n", BHCYN, BHYEL, user.name, COLOR_RESET);
@@ -831,7 +767,7 @@ void _imcReport()
 
     printf("+----------------------------------------------------------------+\n");
     printf("\n");
-    _confirmOk("Data/Hora", _dateTime(), _Danger);
+    _confirm("Data/Hora", _DATETIME_, "Continuar", _Danger);
 }
 
 void _imcAddIMC()
@@ -842,24 +778,20 @@ void _imcAddIMC()
 
     fflush(stdin);
 
-    _getData(&peso, _Float, "IMC - (Kg)\tDIGITE SEU PESO", _Warning);
-    _getData(&altura, _Float, "IMC - (cm)\tDIGITE SUA ALTURA", _Warning);
+    _get_data(&peso, _Float, "IMC - (Kg)\tDIGITE SEU PESO", _Warning);
+    _get_data(&altura, _Float, "IMC - (cm)\tDIGITE SUA ALTURA", _Warning);
 
     altura /= 100;
 
     IMC = peso / (altura * altura);
 
-    if (!_dbInsertIMC(&user, IMC))
-    {
-        _msgDanger("ERRO!", "Falha em inserir novo IMC.");
-    }
-    else
-    {
-        _msgSuccess("OBA!", "IMC registrado com sucesso.");
-    }
-
     printf("\n");
-    _confirmOk("Data/Hora", _dateTime(), _Danger);
+    if (!_dbInsertIMC(&user, IMC, &conn))
+    {
+        _confirm("ERRO!", "Falha em inserir novo IMC.", "Continuar", _Danger);
+        return;
+    }
+    _confirm("OBA!", "IMC registrado com sucesso.", "Continuar", _Success);
 }
 
 // // DELETA CONTA CADASTRADA
@@ -867,7 +799,7 @@ void _imcAddIMC()
 // {
 
 //     _dbSetup();
-//     _dbGetConfig(&dbConfig);
+//     _dbGetConfig(&conn_info);
 
 //     int senhaR;
 
@@ -886,10 +818,10 @@ void _imcAddIMC()
 //     {
 //         if (connObj.conn = mysql_init(0))
 //         {
-//             if (connObj.conn = mysql_real_connect(connObj.conn, dbConfig.host, dbConfig.user, dbConfig.pass, dbConfig.database, dbConfig.port, NULL, 0))
+//             if (connObj.conn = mysql_real_connect(connObj.conn, conn_info.host, conn_info.user, conn_info.pass, conn_info.database, conn_info.port, NULL, 0))
 //             {
 //                 char query[200];
-//                 sprintf(query, "DELETE FROM t_Users WHERE login = '%s' AND senha = '%d'", login, senha);
+//                 sprintf(query, "DELETE FROM tbl_user_ts WHERE login = '%s' AND senha = '%d'", login, senha);
 //                 connObj.qstate = mysql_query(connObj.conn, query);
 //                 if (!connObj.qstate)
 //                 {
@@ -919,315 +851,93 @@ void _imcAddIMC()
 
 void _writeConfig(FILE **_config)
 {
-    t_DBInfo db;
+    conn_info_t db;
 
-    _getData(&db.host, _String, "HOST IP", _Warning);
+    _get_data(&db.host, _String, "HOST IP", _Warning);
     fprintf(*_config, "%s", db.host);
     fprintf(*_config, "\n");
 
-    _getData(&db.user, _String, "USUÁRIO", _Warning);
+    _get_data(&db.user, _String, "USUÁRIO", _Warning);
     fprintf(*_config, "%s", db.user);
     fprintf(*_config, "\n");
 
     _msgDanger("** ATENÇÃO! **", "Caso não haja SENHA, digite null");
-    _getData(&db.pass, _String, "SENHA", _Warning);
+    _get_data(&db.pass, _String, "SENHA", _Warning);
     fprintf(*_config, "%s", db.pass);
     fprintf(*_config, "\n");
 
-    _getData(&db.database, _String, "BANCO DE DADOS", _Warning);
+    _get_data(&db.database, _String, "BANCO DE DADOS", _Warning);
     fprintf(*_config, "%s", db.database);
     fprintf(*_config, "\n");
 
-    _getData(&db.port, _Int, "PORTA", _Warning);
+    _get_data(&db.port, _Int, "PORTA", _Warning);
     fprintf(*_config, "%d", db.port);
 }
 
 void _dbSetup()
 {
-    system(CMD_CLEAR);
+    _clear_terminal();
 
-    _configDb = fopen(fileDb, "r");
+    _config_db_file = fopen(CONFIG_DB_FILENAME, "r");
 
-    if (_configDb == NULL)
+    if (_config_db_file == NULL)
     {
-        _configDb = fopen(fileDb, "w+");
-        _writeConfig(&_configDb);
-        fclose(_configDb);
+        _config_db_file = fopen(CONFIG_DB_FILENAME, "w+");
+        _writeConfig(&_config_db_file);
+        fclose(_config_db_file);
     }
 }
 
-void _dbGetConfig(t_DBInfo *_dbConfig)
+void _dbGetConfig(conn_info_t *_conn_info)
 {
-    char host[sizeof(_dbConfig->host)];
-    char user[sizeof(_dbConfig->user)];
-    char pass[sizeof(_dbConfig->pass)];
-    char database[sizeof(_dbConfig->database)];
+    char host[sizeof(_conn_info->host)];
+    char user[sizeof(_conn_info->user)];
+    char pass[sizeof(_conn_info->pass)];
+    char database[sizeof(_conn_info->database)];
     int port;
 
-    _configDb = fopen(fileDb, "r");
+    _config_db_file = fopen(CONFIG_DB_FILENAME, "r");
 
-    fscanf(_configDb, "%s", host);
-    strcpy(_dbConfig->host, host);
+    fscanf(_config_db_file, "%s", host);
+    strcpy(_conn_info->host, host);
 
-    fscanf(_configDb, "\n%s", user);
-    strcpy(_dbConfig->user, user);
+    fscanf(_config_db_file, "\n%s", user);
+    strcpy(_conn_info->user, user);
 
-    fscanf(_configDb, "\n\n%s", pass);
+    fscanf(_config_db_file, "\n\n%s", pass);
     if (strcmp(pass, "null") == 0)
     {
         strcpy(pass, "");
     }
-    strcpy(_dbConfig->pass, pass);
+    strcpy(_conn_info->pass, pass);
 
-    fscanf(_configDb, "\n\n\n%s", database);
-    strcpy(_dbConfig->database, database);
+    fscanf(_config_db_file, "\n\n\n%s", database);
+    strcpy(_conn_info->database, database);
 
-    fscanf(_configDb, "\n\n\n\n%d", &port);
-    _dbConfig->port = port;
+    fscanf(_config_db_file, "\n\n\n\n%d", &port);
+    _conn_info->port = port;
 
-    fclose(_configDb);
+    fclose(_config_db_file);
 }
 
 void _dbUpdateConfig()
 {
-    system(CMD_CLEAR);
+    _clear_terminal();
 
-    _configDb = fopen(fileDb, "w");
+    _config_db_file = fopen(CONFIG_DB_FILENAME, "w");
 
-    _writeConfig(&_configDb);
+    _writeConfig(&_config_db_file);
 
-    if (ferror(_configDb) == 0)
+    if (ferror(_config_db_file) == 0)
     {
-        fclose(_configDb);
-        _confirmOk(">> SUCESSO!", "CONFIGURAÇÕES ALTERADAS.", _Info);
+        fclose(_config_db_file);
+        printf("\n");
+        _confirm("SUCESSO!", "CONFIGURAÇÕES ALTERADAS.", "Continuar", _Info);
     }
     else
     {
-        fclose(_configDb);
-        _confirmOk(">> ERRO!", "NÃO FOI POSSIVEL ALTERAR AS CONFIGURAÇÕES.", _Danger);
-        sleep(1);
+        fclose(_config_db_file);
+        printf("\n");
+        _confirm("ERRO!", "NÃO FOI POSSIVEL ALTERAR AS CONFIGURAÇÕES.", "Continuar", _Danger);
     }
-}
-
-int _dbInit()
-{
-    connObj.conn = mysql_init(0);
-    if (!connObj.conn)
-    {
-        _confirmOk("ERRO FATAL!", "NÃO foi possivel criar o OBJETO de conexão!", _Danger);
-        return _False;
-    }
-    return _True;
-}
-
-int _dbConnect(t_DBInfo *_dbConfig)
-{
-    connObj.conn = mysql_real_connect(
-        connObj.conn,
-        _dbConfig->host,
-        _dbConfig->user,
-        _dbConfig->pass,
-        _dbConfig->database,
-        _dbConfig->port,
-        NULL,
-        0);
-    if (!connObj.conn)
-    {
-        char msg[206];
-        sprintf(msg, "IMPOSSÍVEL ESTABELECER CONEXÃO!\n- Verifique se há conexão com a internet.\n- Verifique se as configurações de ACESSO ao BANCO DE DADOS estão CORRETAS.\n- Verifique se o MySQL está ativo (localhost).");
-        _confirmOk("ERRO FATAL!", msg, _Danger);
-        return _False;
-    }
-    return _True;
-}
-
-void _dbCheckConn()
-{
-    _dbSetup();
-    _dbGetConfig(&dbConfig);
-
-    if (!_dbInit() || !_dbConnect(&dbConfig))
-    {
-        return;
-    }
-
-    char msg[132];
-    sprintf(msg, "CONEXÃO OK! BASE DE DADOS: %s\n(%s)", dbConfig.database, _dateTime());
-    _confirmOk("Sucesso!", msg, _Info);
-
-    mysql_close(connObj.conn);
-}
-
-int _dbValidateLogin(t_User *_user, char *_login, int _password)
-{
-    // _dbSetup();
-    _dbGetConfig(&dbConfig);
-
-    if (!_dbInit() || !_dbConnect(&dbConfig))
-    {
-        return _False;
-    }
-
-    char query[200];
-    sprintf(query, "SELECT * FROM usuarios WHERE login = '%s' AND senha = %d", _login, _password);
-
-    if (
-        mysql_query(connObj.conn, query) != MYSQL_STATUS_READY ||
-        ((connObj.res = mysql_store_result(connObj.conn)) && (int)mysql_num_rows(connObj.res) == 0))
-    {
-        mysql_close(connObj.conn);
-        return _False;
-    }
-
-    MYSQL_ROW row = mysql_fetch_row(connObj.res);
-
-    _user->id = atoi(row[0]);
-    _user->name = row[1];
-
-    _user->genre = row[2][0] == "M"[0] ? M : F;
-    _user->login = row[3];
-    _user->password = atoi(row[4]);
-
-    return _True;
-}
-
-int _dbInsertIMC(t_User *_user, float _imc)
-{
-    // _dbSetup();
-    _dbGetConfig(&dbConfig);
-
-    if (!_dbInit() || !_dbConnect(&dbConfig))
-    {
-        return _False;
-    }
-
-    char query[200];
-    sprintf(query, "INSERT INTO registros (usuarios_id,imc,datahora) VALUES (%d,%f,'%s')",
-            _user->id,
-            _imc,
-            _dateTime());
-
-    if (
-        mysql_query(connObj.conn, query) != MYSQL_STATUS_READY ||
-        (int)mysql_affected_rows(connObj.conn) == 0)
-    {
-        mysql_close(connObj.conn);
-        return _False;
-    }
-
-    mysql_close(connObj.conn);
-    return _True;
-}
-
-int _dbAddUser(t_User _user)
-{
-    // _dbSetup();
-    _dbGetConfig(&dbConfig);
-
-    if (!_dbInit() || !_dbConnect(&dbConfig))
-    {
-        return _False;
-    }
-
-    char s = _user.genre == M ? 'M' : 'F';
-
-    printf("%s\n", _user.name);
-    printf("%s\n", _user.login);
-    exit(1);
-
-    char query[200];
-    sprintf(query, "INSERT INTO usuarios (nome, sexo, login, senha) VALUES ('%s','%c','%s','%d')",
-            _user.name,
-            s,
-            _user.login,
-            _user.password);
-
-    if (
-        mysql_query(connObj.conn, query) != MYSQL_STATUS_READY ||
-        (int)mysql_affected_rows(connObj.conn) == 0)
-    {
-        mysql_close(connObj.conn);
-        return _False;
-    }
-
-    return _True;
-}
-
-int _dbUpdateUser(t_User *_user, t_User _updated_user)
-{
-    // _dbSetup();
-    _dbGetConfig(&dbConfig);
-
-    if (!_dbInit() || !_dbConnect(&dbConfig))
-    {
-        return _False;
-    }
-
-    char s = _updated_user.genre == M ? 'M' : 'F';
-
-    char query[200];
-    sprintf(query, "UPDATE usuarios SET nome = '%s', sexo = '%c', login = '%s', senha = %d WHERE id = %d",
-            _updated_user.name,
-            s,
-            _updated_user.login,
-            _updated_user.password,
-            _user->id);
-
-    if (
-        mysql_query(connObj.conn, query) != MYSQL_STATUS_READY ||
-        (int)mysql_affected_rows(connObj.conn) == 0)
-    {
-        mysql_close(connObj.conn);
-        return _False;
-    }
-
-    _user->name = _updated_user.name;
-    _user->genre = _updated_user.genre;
-    _user->login = _updated_user.login;
-    _user->password = _updated_user.password;
-
-    return _True;
-}
-
-t_IMC *_dbGetIMCbyUserId(t_User *_user)
-{
-    // _dbSetup();
-    _dbGetConfig(&dbConfig);
-
-    if (!_dbInit() || !_dbConnect(&dbConfig))
-    {
-        return NULL;
-    }
-
-    char query[200];
-    sprintf(query, "SELECT * FROM registros WHERE usuarios_id = %d", _user->id);
-
-    if (
-        mysql_query(connObj.conn, query) != MYSQL_STATUS_READY ||
-        ((connObj.res = mysql_store_result(connObj.conn)) && (int)mysql_num_rows(connObj.res) == 0))
-    {
-        mysql_close(connObj.conn);
-        return NULL;
-    }
-
-    t_IMC *values = malloc(sizeof(t_IMC) * mysql_num_rows(connObj.res));
-    if (!values)
-        return NULL;
-
-    MYSQL_ROW row;
-
-    int cont = 0;
-    while ((row = mysql_fetch_row(connObj.res)))
-    {
-        t_IMC t;
-        t.id = atoi(row[0]);
-        t.user_id = atoi(row[1]);
-        t.imc = (float)atof(row[2]);
-        t.datetime = row[3];
-        values[cont] = t;
-        cont++;
-    }
-
-    mysql_close(connObj.conn);
-    return values;
 }
