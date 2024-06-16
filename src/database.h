@@ -14,9 +14,9 @@ typedef struct
 typedef struct
 {
     unsigned int id;
-    char *name;
+    char name[61];
     int genre;
-    char *login;
+    char login[21];
     unsigned int password;
 } tbl_user_t;
 

@@ -1,6 +1,7 @@
 #include <mysql/mysql.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "constants.h"
 #include "database.h"
@@ -51,10 +52,10 @@ int _dbValidateLogin(tbl_user_t *_user, char *_login, int _password, MYSQL **_co
     MYSQL_ROW row = mysql_fetch_row(res);
 
     _user->id = atoi(row[0]);
-    _user->name = row[1];
+    strcpy(_user->name, row[1]);
 
     _user->genre = row[2][0] == "M"[0] ? M : F;
-    _user->login = row[3];
+    strcpy(_user->login, row[3]);
     _user->password = atoi(row[4]);
 
     return _True;
@@ -88,10 +89,6 @@ int _dbAddUser(tbl_user_t _user, MYSQL **_conn)
         return _False;
 
     char s = _user.genre == M ? 'M' : 'F';
-
-    printf("%s\n", _user.name);
-    printf("%s\n", _user.login);
-    exit(1);
 
     char query[200];
     sprintf(query, "INSERT INTO usuarios (nome, sexo, login, senha) VALUES ('%s','%c','%s','%d')",
@@ -134,9 +131,9 @@ int _dbUpdateUser(tbl_user_t *_user, tbl_user_t _updated_user, MYSQL **_conn)
         return _False;
     }
 
-    _user->name = _updated_user.name;
+    strcpy(_user->name, _updated_user.name);
+    strcpy(_user->login, _updated_user.login);
     _user->genre = _updated_user.genre;
-    _user->login = _updated_user.login;
     _user->password = _updated_user.password;
 
     return _True;

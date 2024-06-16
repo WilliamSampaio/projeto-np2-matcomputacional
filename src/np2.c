@@ -27,10 +27,10 @@ int playing = _False;
 
 void _user_init(tbl_user_t *_user)
 {
+    strcpy(_user->name, "");
+    strcpy(_user->login, "");
     _user->id = 0;
-    _user->name = "";
     _user->genre = 0;
-    _user->login = "";
     _user->password = 0;
 }
 
@@ -130,7 +130,7 @@ void _stop_sound()
 
 void _exit_()
 {
-    if (_confirm_options("SAIR", "Você deseja realmente SAIR?", "Confirmar", 'S', 'n', _Danger) == _True)
+    if (_confirm_options("SAIR", "Você deseja realmente SAIR?", "Confirmar", 'S', 'N', _Danger) == _True)
     {
         close_conn(&conn);
         _clear_terminal();
@@ -143,7 +143,7 @@ void _logout_txt_option()
 {
     if (user.id != 0)
     {
-        char label[29];
+        char label[60];
         sprintf(label, "LOGOUT (%s%s%s)", BHYEL, user.login, COLOR_RESET);
         _msgSuccess("[10]", label);
         printf("\n");
@@ -152,7 +152,7 @@ void _logout_txt_option()
 
 void _process_logout()
 {
-    if (user.id != 0 && _confirm_options("LOGOUT", "Finalizar sessão?", "Confirmar", 'S', 'N', _Warning))
+    if (user.id != 0 && _confirm_options("LOGOUT", "Finalizar sessão?", "Confirmar", 'S', 'N', _Warning) == _True)
     {
         _user_init(&user);
     }
@@ -321,7 +321,7 @@ void _imc_menu()
 
 void _imcLogin()
 {
-    char login[20];
+    char login[21];
     int senha;
 
     _imcTxtTitle();
@@ -335,7 +335,7 @@ void _imcLogin()
     }
 
     printf("\n");
-    if (_confirm_options("ERRO!", "Login ou senha inválida. Tentar novamente?", "Digite (S)im ou (N)ão", 'S', 'N', _Danger))
+    if (_confirm_options("ERRO!", "Login ou senha inválida.", "Tentar novamente?", 'S', 'N', _Danger))
     {
         return _imcLogin();
     }
@@ -418,11 +418,11 @@ void _imcAddUser()
 
     do
     {
-        char n1[60], n2[60], fn[120];
+        char n1[61], n2[61], fn[122];
         _get_data(&n1, _String, "DIGITE SEU NOME", _Warning);
         _get_data(&n2, _String, "DIGITE SEU SOBRENOME", _Warning);
         sprintf(fn, "%s %s", n1, n2);
-        if (strlen(fn) > 60)
+        if (strlen(fn) > 61)
         {
             printf("\n");
             _msgDanger("ERRO!", "Nome maior que 60 letras.");
@@ -432,12 +432,9 @@ void _imcAddUser()
         {
             fn[i] = toupper(fn[i]);
         }
-        n_user.name = fn;
+        strcpy(n_user.name, fn);
         break;
     } while (_True);
-
-    printf("%s\n", n_user.name);
-    // printf("%s\n", n_user.login);
 
     do
     {
@@ -457,18 +454,15 @@ void _imcAddUser()
     {
         char login[40];
         _get_data(&login, _String, "DIGITE SEU LOGIN", _Warning);
-        printf("%s\n", login);
-        if (strlen(login) > 20)
+        if (strlen(login) > 21)
         {
             printf("\n");
             _msgDanger("ERRO!", "Login maior que 20 letras.");
             continue;
         }
-        n_user.login = login;
+        strcpy(n_user.login, login);
         break;
     } while (_True);
-
-    printf("%s\n", n_user.login);
 
     do
     {
@@ -488,18 +482,14 @@ void _imcAddUser()
         break;
     } while (_True);
 
-    printf("%s\n", n_user.name);
-    printf("%s\n", n_user.login);
-    exit(1);
-
     if (_dbAddUser(n_user, &conn))
     {
         printf("\n");
-        _confirm("SUCESSO!", "Nome do usuário atualizado.", "Continuar", _Success);
+        _confirm("SUCESSO!", "Usuário cadastrado.", "Continuar", _Success);
         return _imc_menu();
     }
 
-    if (_confirm_options("ERRO!", "Falha em cadastrar novo usuário.", "Tentar novamente? (S/N)", 'S', 'N', _Danger))
+    if (_confirm_options("ERRO!", "Falha em cadastrar novo usuário.", "Tentar novamente?", 'S', 'N', _Danger))
     {
         return _imcAddUser();
     }
@@ -510,10 +500,11 @@ void _imcUpdateUser()
 {
     setbuf(stdin, NULL);
     tbl_user_t u;
-    u.name = user.name;
     u.genre = user.genre;
-    u.login = user.login;
+    u.id = user.id;
     u.password = user.password;
+    strcpy(u.login, user.login);
+    strcpy(u.name, user.name);
 
     _imcTxtTitle();
     _msgSuccess("ATUALIZAR...", "");
@@ -538,7 +529,7 @@ void _imcUpdateUser()
     case 1:
         do
         {
-            char n1[60], n2[60], fn[120];
+            char n1[61], n2[61], fn[122];
             _get_data(&n1, _String, "DIGITE SEU NOME", _Warning);
             _get_data(&n2, _String, "DIGITE SEU SOBRENOME", _Warning);
             sprintf(fn, "%s %s", n1, n2);
@@ -552,7 +543,7 @@ void _imcUpdateUser()
             {
                 fn[i] = toupper(fn[i]);
             }
-            u.name = fn;
+            strcpy(u.name, fn);
             break;
         } while (_True);
         if (_dbUpdateUser(&user, u, &conn))
@@ -589,13 +580,13 @@ void _imcUpdateUser()
         {
             char login[40];
             _get_data(&login, _String, "DIGITE NOVO LOGIN", _Warning);
-            if (strlen(login) > 20)
+            if (strlen(login) > 21)
             {
                 printf("\n");
                 _msgDanger("ERRO!", "Login maior que 20 letras.");
                 continue;
             }
-            u.login = login;
+            strcpy(u.login, login);
             break;
         } while (_True);
         if (_dbUpdateUser(&user, u, &conn))
