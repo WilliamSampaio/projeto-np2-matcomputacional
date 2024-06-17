@@ -176,7 +176,7 @@ tbl_imc_t *_dbGetIMCbyUserId(tbl_user_t *_user, MYSQL **_conn)
         return NULL;
     }
 
-    tbl_imc_t *values = calloc(mysql_num_rows(res), sizeof(tbl_imc_t));
+    tbl_imc_t *values = calloc((size_t) mysql_num_rows(res) + 1, sizeof(tbl_imc_t));
     if (!values)
         return NULL;
 
