@@ -27,16 +27,13 @@ void _start_();
 
 void _imcAddIMC();
 void _imcLogin();
-void _imc_menu();
+void _imcMenu();
 void _imcReport();
-void _imc_session();
+void _imcSession();
 void _imcTxtTitle();
 void _imcAddUser();
 void _imcUpdateUser();
-
-// void _imcDelCadImc(char *, int);
-
-// void load();
+void _imcDeleteUser();
 
 void _writeConfig(FILE **);
 void _dbSetup();

@@ -139,6 +139,25 @@ int _dbUpdateUser(tbl_user_t *_user, tbl_user_t _updated_user, MYSQL **_conn)
     return _True;
 }
 
+int _dbDeleteUser(tbl_user_t *_user, MYSQL **_conn)
+{
+    if (*_conn == NULL)
+        return _False;
+
+    char query[200];
+    sprintf(query, "DELETE FROM usuarios WHERE id = %d", _user->id);
+
+    if (
+        mysql_query(*_conn, query) != MYSQL_STATUS_READY ||
+        (int)mysql_affected_rows(*_conn) == 0)
+    {
+        _msgDanger("FALHA", (char *)mysql_error(*_conn));
+        return _False;
+    }
+
+    return _True;
+}
+
 tbl_imc_t *_dbGetIMCbyUserId(tbl_user_t *_user, MYSQL **_conn)
 {
     if (*_conn == NULL)
