@@ -34,7 +34,5 @@ int _dbValidateLogin(tbl_user_t *user, char *login, int password, MYSQL **conn);
 int _dbInsertIMC(tbl_user_t *user, float imc, MYSQL **conn);
 int _dbAddUser(tbl_user_t new_user, MYSQL **conn);
 int _dbUpdateUser(tbl_user_t *user, tbl_user_t updated_user, MYSQL **conn);
+int _dbDeleteUser(tbl_user_t *user, MYSQL **conn);
 tbl_imc_t *_dbGetIMCbyUserId(tbl_user_t *user, MYSQL **conn);
-
-void _BD_atualizarCad();
-// void _BD_delCad(char *, int);

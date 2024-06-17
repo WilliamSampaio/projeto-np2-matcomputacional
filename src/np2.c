@@ -192,7 +192,7 @@ void _main_menu()
         _star_wars_robos();
         break;
     case 2:
-        (user.id != 0) ? _imc_session() : _imc_menu();
+        (user.id != 0) ? _imcSession() : _imcMenu();
         break;
     case 3:
         _connect();
@@ -278,7 +278,29 @@ void _imcTxtTitle()
     printf("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::\n\n");
 }
 
-void _imc_menu()
+void _imcLogin()
+{
+    char login[21];
+    int senha;
+
+    _imcTxtTitle();
+
+    _get_data(&login, _String, "LOGIN", _Warning);
+    _get_data(&senha, _Int, "SENHA", _Warning);
+
+    if (_dbValidateLogin(&user, login, senha, &conn))
+    {
+        return _imcSession();
+    }
+
+    printf("\n");
+    if (_confirm_options("ERRO!", "Login ou senha inválida.", "Tentar novamente?", 'S', 'N', _Danger))
+    {
+        return _imcLogin();
+    }
+}
+
+void _imcMenu()
 {
     _imcTxtTitle();
     _msgSuccess("[1]", "ENTRAR");
@@ -300,11 +322,11 @@ void _imc_menu()
     {
     case 0:
         _exit_();
-        _imc_menu();
+        _imcMenu();
         break;
     case 1:
         _imcLogin();
-        _imc_menu();
+        _imcMenu();
         break;
     case 2:
         _imcAddUser();
@@ -314,41 +336,12 @@ void _imc_menu()
         break;
     default:
         _confirm("Erro", "Opção inválida.", "Continuar", _Danger);
-        _imc_menu();
+        _imcMenu();
         break;
     }
 }
 
-void _imcLogin()
-{
-    char login[21];
-    int senha;
-
-    _imcTxtTitle();
-
-    _get_data(&login, _String, "LOGIN", _Warning);
-    _get_data(&senha, _Int, "SENHA", _Warning);
-
-    if (_dbValidateLogin(&user, login, senha, &conn))
-    {
-        return _imc_session();
-    }
-
-    printf("\n");
-    if (_confirm_options("ERRO!", "Login ou senha inválida.", "Tentar novamente?", 'S', 'N', _Danger))
-    {
-        return _imcLogin();
-    }
-}
-
-// // DELETA CADASTRO DE USU�RIO
-// void _imcDelCadImc(char login[20], int senha)
-// {
-
-//     _BD_delCad(login, senha);
-// }
-
-void _imc_session()
+void _imcSession()
 {
     _imcTxtTitle();
     _msgSuccess("[1]", "REGISTRAR NOVO IMC");
@@ -376,33 +369,29 @@ void _imc_session()
         break;
     case 1:
         _imcAddIMC();
-        _imc_session();
+        _imcSession();
         break;
     case 2:
         _imcReport();
-        _imc_session();
+        _imcSession();
         break;
     case 4:
         _imcUpdateUser();
-        _imc_session();
+        _imcSession();
         break;
     case 9:
-        (user.id != 0) ? _main_menu() : _imc_menu();
+        (user.id != 0) ? _main_menu() : _imcMenu();
         break;
     case 10:
         _process_logout();
-        _imc_menu();
+        _imcMenu();
         break;
     case -99:
-        _clear_terminal();
-        _imcTxtTitle();
-        // _BD_delCad(login, senha);
-        // _confirm("Data/Hora", _DATETIME_, _Danger);
-        _imc_session();
+        _imcDeleteUser();
         break;
     default:
         _confirm("Erro", "Opção inválida.", "Continuar", _Danger);
-        _imc_session();
+        _imcSession();
         break;
     }
 }
@@ -486,14 +475,14 @@ void _imcAddUser()
     {
         printf("\n");
         _confirm("SUCESSO!", "Usuário cadastrado.", "Continuar", _Success);
-        return _imc_menu();
+        return _imcMenu();
     }
 
     if (_confirm_options("ERRO!", "Falha em cadastrar novo usuário.", "Tentar novamente?", 'S', 'N', _Danger))
     {
         return _imcAddUser();
     }
-    return _imc_menu();
+    return _imcMenu();
 }
 
 void _imcUpdateUser()
@@ -524,7 +513,7 @@ void _imcUpdateUser()
     switch (op)
     {
     case 0:
-        _imc_session();
+        _imcSession();
         break;
     case 1:
         do
@@ -636,125 +625,105 @@ void _imcUpdateUser()
     }
 }
 
-// // VERIFICA SE O NOME DE tbl_user_t JA EXISTE NO BD
-// int _BD_validarUserName(char *login)
-// {
-
-//     _dbSetup();
-//     _dbGetConfig(&conn_info);
-
-//     if (connObj.conn = mysql_init(0))
-//     {
-//         if (connObj.conn = mysql_real_connect(connObj.conn, conn_info.host, conn_info.user, conn_info.pass, conn_info.database, conn_info.port, NULL, 0))
-//         {
-//             char query[200];
-//             sprintf(query, "select login from tbl_user_ts where login = '%s'", login);
-//             connObj.qstate = mysql_query(connObj.conn, query);
-//             if (!connObj.qstate)
-//             {
-//                 connObj.res = mysql_store_result(connObj.conn);
-//                 while (connObj.row = mysql_fetch_row(connObj.res))
-//                 {
-//                     if (connObj.row[0])
-//                     {
-//                         mysql_close(connObj.conn);
-//                         return 1;
-//                     }
-//                     else
-//                     {
-//                         return 0;
-//                     }
-//                     break;
-//                 }
-//             }
-//             else
-//             {
-//                 _conStatus00(connObj);
-//                 mysql_close(connObj.conn);
-//                 return -1;
-//             }
-//         }
-//         else
-//         {
-//             return -2;
-//         }
-//     }
-//     else
-//     {
-//         return -3;
-//     }
-// }
-
 void _imcReport()
 {
     _imcTxtTitle();
 
     tbl_imc_t *values = _dbGetIMCbyUserId(&user, &conn);
 
-    printf("+----------------------------------------------------------------+\n");
-    printf("| %sNOME: %s%s%s\t\t\t\t\t\t |\n", BHCYN, BHYEL, user.name, COLOR_RESET);
-
-    if (values != NULL)
+    if (values == NULL)
     {
-        int contReg = 0;
-        float contRegTotal = 0;
-        float media;
-        char ultimo_reg[22];
-
-        strcpy(ultimo_reg, "NULL");
-
-        printf("+----------------------------------------------------------------+\n");
-        printf("|%s\tID\t%s|%s\tIMC\t%s|%s           DATA HORA            %s|\n",
-               BHCYN,
-               COLOR_RESET,
-               BHCYN,
-               COLOR_RESET,
-               BHCYN,
-               COLOR_RESET);
-        printf("+----------------------------------------------------------------+\n");
-
-        for (int i = 0; i < sizeof(values); i++)
-        {
-            printf("|%s\t%d\t%s| %s%.2f\t\t%s|     %s%s%s     |\n",
-                   BHYEL,
-                   values[i].id,
-                   COLOR_RESET,
-                   BHYEL,
-                   values[i].imc,
-                   COLOR_RESET,
-                   BHYEL,
-                   values[i].datetime,
-                   COLOR_RESET);
-
-            contReg++;
-            contRegTotal += values[i].imc;
-            strcpy(ultimo_reg, values[i].datetime);
-        }
-
-        if (contReg != 0)
-        {
-            media = contRegTotal / contReg;
-        }
-        else
-        {
-            media = 0;
-        }
-
-        printf("+----------------------------------------------------------------+\n");
-        printf("| %sRegistros: %s%d%s\t| %sMédia: %s%.2f%s \t| %sÚltimo: %s%s%s |\n",
-               BHCYN,
-               BHYEL,
-               contReg,
-               COLOR_RESET,
-               BHCYN,
-               BHYEL,
-               media,
-               COLOR_RESET,
-               BHCYN,
-               BHYEL,
-               ultimo_reg,
-               COLOR_RESET);
+        _confirm("OOPS!", "Ainda não há IMC registrado.", "Voltar", _Warning);
+        return;
     }
+
+    printf("+----------------------------------------------------------------+\n");
+
+    printf("|%sNOME: %s", BHCYN, BHYEL);
+
+    if (strlen(user.name) > 54)
+    {
+        for (int i = 0; i <= 54; i++)
+        {
+            printf("%c", user.name[i]);
+        }
+        printf("...%s|\n", COLOR_RESET);
+    }
+    else
+    {
+        int fill = 58 - strlen(user.name);
+        printf("%s", user.name);
+        for (int i = 0; i < fill; i++)
+        {
+            printf("%c", ' ');
+        }
+        printf("%s|\n", COLOR_RESET);
+    }
+
+    int contReg = 0;
+    float contRegTotal = 0;
+    float media;
+    char ultimo_reg[22];
+
+    strcpy(ultimo_reg, "NULL");
+
+    printf("+----------------------------------------------------------------+\n");
+    printf("|%s\tID\t%s|%s\tIMC\t%s|%s           DATA HORA            %s|\n",
+           BHCYN,
+           COLOR_RESET,
+           BHCYN,
+           COLOR_RESET,
+           BHCYN,
+           COLOR_RESET);
+    printf("+----------------------------------------------------------------+\n");
+
+    int cont = 0;
+    while (_True)
+    {
+        if (values[cont].id == 0)
+            break;
+        printf("|%s\t%d\t%s| %s%.2f\t\t%s|     %s%s%s     |\n",
+               BHYEL,
+               values[cont].id,
+               COLOR_RESET,
+               BHYEL,
+               values[cont].imc,
+               COLOR_RESET,
+               BHYEL,
+               values[cont].datetime,
+               COLOR_RESET);
+
+        contReg++;
+        contRegTotal += values[cont].imc;
+        strcpy(ultimo_reg, values[cont].datetime);
+        cont++;
+    }
+
+    free(values);
+
+    if (contReg != 0)
+    {
+        media = contRegTotal / contReg;
+    }
+    else
+    {
+        media = 0;
+    }
+
+    printf("+----------------------------------------------------------------+\n");
+    printf("| %sRegistros: %s%d%s\t| %sMédia: %s%.2f%s \t| %sÚltimo: %s%s%s |\n",
+           BHCYN,
+           BHYEL,
+           contReg,
+           COLOR_RESET,
+           BHCYN,
+           BHYEL,
+           media,
+           COLOR_RESET,
+           BHCYN,
+           BHYEL,
+           ultimo_reg,
+           COLOR_RESET);
 
     printf("+----------------------------------------------------------------+\n");
     printf("\n");
@@ -783,6 +752,37 @@ void _imcAddIMC()
         return;
     }
     _confirm("OBA!", "IMC registrado com sucesso.", "Continuar", _Success);
+}
+
+void _imcDeleteUser()
+{
+    _imcTxtTitle();
+    if (_confirm_options("!ATENÇÃO!", "Ao remoção é irreversivél.", "Prosseguir?", 'S', 'N', _Danger) == _True)
+    {
+        int senha;
+        printf("\n");
+        _get_data(&senha, _Int, "CONFIRME SUA SENHA", _Warning);
+
+        if (senha != user.password)
+        {
+            printf("\n");
+            _confirm("ERRO!", "Senha incorreta.", "Continuar", _Warning);
+            _imcSession();
+        }
+
+        if (!_dbDeleteUser(&user, &conn))
+        {
+            printf("\n");
+            _confirm("ERRO!", "Falha em deletar usuário.", "Continuar", _Danger);
+            _imcSession();
+        }
+
+        _user_init(&user);
+        printf("\n");
+        _confirm("OK!", "Usuário removido com sucesso.", "Continuar", _Success);
+        _imcMenu();
+    }
+    _imcSession();
 }
 
 // // DELETA CONTA CADASTRADA
