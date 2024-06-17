@@ -691,70 +691,99 @@ void _imcReport()
 
     tbl_imc_t *values = _dbGetIMCbyUserId(&user, &conn);
 
-    printf("+----------------------------------------------------------------+\n");
-    printf("| %sNOME: %s%s%s\t\t\t\t\t\t |\n", BHCYN, BHYEL, user.name, COLOR_RESET);
-
-    if (values != NULL)
+    if (values == NULL)
     {
-        int contReg = 0;
-        float contRegTotal = 0;
-        float media;
-        char ultimo_reg[22];
-
-        strcpy(ultimo_reg, "NULL");
-
-        printf("+----------------------------------------------------------------+\n");
-        printf("|%s\tID\t%s|%s\tIMC\t%s|%s           DATA HORA            %s|\n",
-               BHCYN,
-               COLOR_RESET,
-               BHCYN,
-               COLOR_RESET,
-               BHCYN,
-               COLOR_RESET);
-        printf("+----------------------------------------------------------------+\n");
-
-        for (int i = 0; i < sizeof(values); i++)
-        {
-            printf("|%s\t%d\t%s| %s%.2f\t\t%s|     %s%s%s     |\n",
-                   BHYEL,
-                   values[i].id,
-                   COLOR_RESET,
-                   BHYEL,
-                   values[i].imc,
-                   COLOR_RESET,
-                   BHYEL,
-                   values[i].datetime,
-                   COLOR_RESET);
-
-            contReg++;
-            contRegTotal += values[i].imc;
-            strcpy(ultimo_reg, values[i].datetime);
-        }
-
-        if (contReg != 0)
-        {
-            media = contRegTotal / contReg;
-        }
-        else
-        {
-            media = 0;
-        }
-
-        printf("+----------------------------------------------------------------+\n");
-        printf("| %sRegistros: %s%d%s\t| %sMédia: %s%.2f%s \t| %sÚltimo: %s%s%s |\n",
-               BHCYN,
-               BHYEL,
-               contReg,
-               COLOR_RESET,
-               BHCYN,
-               BHYEL,
-               media,
-               COLOR_RESET,
-               BHCYN,
-               BHYEL,
-               ultimo_reg,
-               COLOR_RESET);
+        _confirm("OOPS!", "Ainda não há IMC registrado.", "Voltar", _Warning);
+        return;
     }
+
+    printf("+----------------------------------------------------------------+\n");
+
+    printf("|%sNOME: %s", BHCYN, BHYEL);
+
+    if (strlen(user.name) > 54)
+    {
+        for (int i = 0; i <= 54; i++)
+        {
+            printf("%c", user.name[i]);
+        }
+        printf("...%s|\n", COLOR_RESET);
+    }
+    else
+    {
+        int fill = 58 - strlen(user.name);
+        printf("%s", user.name);
+        for (int i = 0; i < fill; i++)
+        {
+            printf("%c", ' ');
+        }
+        printf("%s|\n", COLOR_RESET);
+    }
+
+    int contReg = 0;
+    float contRegTotal = 0;
+    float media;
+    char ultimo_reg[22];
+
+    strcpy(ultimo_reg, "NULL");
+
+    printf("+----------------------------------------------------------------+\n");
+    printf("|%s\tID\t%s|%s\tIMC\t%s|%s           DATA HORA            %s|\n",
+           BHCYN,
+           COLOR_RESET,
+           BHCYN,
+           COLOR_RESET,
+           BHCYN,
+           COLOR_RESET);
+    printf("+----------------------------------------------------------------+\n");
+
+    int cont = 0;
+    while (_True)
+    {
+        if (values[cont].id == 0)
+            break;
+        printf("|%s\t%d\t%s| %s%.2f\t\t%s|     %s%s%s     |\n",
+               BHYEL,
+               values[cont].id,
+               COLOR_RESET,
+               BHYEL,
+               values[cont].imc,
+               COLOR_RESET,
+               BHYEL,
+               values[cont].datetime,
+               COLOR_RESET);
+
+        contReg++;
+        contRegTotal += values[cont].imc;
+        strcpy(ultimo_reg, values[cont].datetime);
+        cont++;
+    }
+
+    free(values);
+
+    if (contReg != 0)
+    {
+        media = contRegTotal / contReg;
+    }
+    else
+    {
+        media = 0;
+    }
+
+    printf("+----------------------------------------------------------------+\n");
+    printf("| %sRegistros: %s%d%s\t| %sMédia: %s%.2f%s \t| %sÚltimo: %s%s%s |\n",
+           BHCYN,
+           BHYEL,
+           contReg,
+           COLOR_RESET,
+           BHCYN,
+           BHYEL,
+           media,
+           COLOR_RESET,
+           BHCYN,
+           BHYEL,
+           ultimo_reg,
+           COLOR_RESET);
 
     printf("+----------------------------------------------------------------+\n");
     printf("\n");

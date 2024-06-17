@@ -151,13 +151,13 @@ tbl_imc_t *_dbGetIMCbyUserId(tbl_user_t *_user, MYSQL **_conn)
 
     if (
         mysql_query(*_conn, query) != MYSQL_STATUS_READY ||
-        ((res = mysql_store_result(*_conn)) && (int)mysql_num_rows(res) == 0))
+        ((res = mysql_store_result(*_conn)) && (int)mysql_num_rows(res) < 1))
     {
         _msgDanger("FALHA", (char *)mysql_error(*_conn));
         return NULL;
     }
 
-    tbl_imc_t *values = malloc(sizeof(tbl_imc_t) * mysql_num_rows(res));
+    tbl_imc_t *values = calloc(mysql_num_rows(res), sizeof(tbl_imc_t));
     if (!values)
         return NULL;
 
@@ -171,7 +171,7 @@ tbl_imc_t *_dbGetIMCbyUserId(tbl_user_t *_user, MYSQL **_conn)
         t.user_id = atoi(row[1]);
         t.imc = (float)atof(row[2]);
         t.datetime = row[3];
-        values[cont] = t;
+        *(values + cont) = t;
         cont++;
     }
 
