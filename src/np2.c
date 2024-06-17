@@ -278,6 +278,28 @@ void _imcTxtTitle()
     printf("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::\n\n");
 }
 
+void _imcLogin()
+{
+    char login[21];
+    int senha;
+
+    _imcTxtTitle();
+
+    _get_data(&login, _String, "LOGIN", _Warning);
+    _get_data(&senha, _Int, "SENHA", _Warning);
+
+    if (_dbValidateLogin(&user, login, senha, &conn))
+    {
+        return _imcSession();
+    }
+
+    printf("\n");
+    if (_confirm_options("ERRO!", "Login ou senha inválida.", "Tentar novamente?", 'S', 'N', _Danger))
+    {
+        return _imcLogin();
+    }
+}
+
 void _imcMenu()
 {
     _imcTxtTitle();
@@ -316,28 +338,6 @@ void _imcMenu()
         _confirm("Erro", "Opção inválida.", "Continuar", _Danger);
         _imcMenu();
         break;
-    }
-}
-
-void _imcLogin()
-{
-    char login[21];
-    int senha;
-
-    _imcTxtTitle();
-
-    _get_data(&login, _String, "LOGIN", _Warning);
-    _get_data(&senha, _Int, "SENHA", _Warning);
-
-    if (_dbValidateLogin(&user, login, senha, &conn))
-    {
-        return _imcSession();
-    }
-
-    printf("\n");
-    if (_confirm_options("ERRO!", "Login ou senha inválida.", "Tentar novamente?", 'S', 'N', _Danger))
-    {
-        return _imcLogin();
     }
 }
 
