@@ -28,6 +28,12 @@ typedef struct
     char *datetime;
 } tbl_imc_t;
 
+typedef struct
+{
+    unsigned long int num_rows;
+    tbl_imc_t *values;
+} tbl_imc_result_t;
+
 MYSQL *get_conn(conn_info_t *conn_info);
 void close_conn(MYSQL **conn);
 int _dbValidateLogin(tbl_user_t *user, char *login, int password, MYSQL **conn);
@@ -35,4 +41,4 @@ int _dbInsertIMC(tbl_user_t *user, float imc, MYSQL **conn);
 int _dbAddUser(tbl_user_t new_user, MYSQL **conn);
 int _dbUpdateUser(tbl_user_t *user, tbl_user_t updated_user, MYSQL **conn);
 int _dbDeleteUser(tbl_user_t *user, MYSQL **conn);
-tbl_imc_t *_dbGetIMCbyUserId(tbl_user_t *user, MYSQL **conn);
+tbl_imc_result_t *_dbGetIMCbyUserId(tbl_user_t *user, MYSQL **conn);

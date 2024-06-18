@@ -629,9 +629,9 @@ void _imcReport()
 {
     _imcTxtTitle();
 
-    tbl_imc_t *values = _dbGetIMCbyUserId(&user, &conn);
+    tbl_imc_result_t *result = _dbGetIMCbyUserId(&user, &conn);
 
-    if (values == NULL)
+    if (result == NULL)
     {
         _confirm("OOPS!", "Ainda não há IMC registrado.", "Voltar", _Warning);
         return;
@@ -677,29 +677,26 @@ void _imcReport()
            COLOR_RESET);
     printf("+----------------------------------------------------------------+\n");
 
-    int cont = 0;
-    while (_True)
+    for (int i = 0; i < result->num_rows; i++)
     {
-        if (values[cont].id == 0)
-            break;
         printf("|%s\t%d\t%s| %s%.2f\t\t%s|     %s%s%s     |\n",
                BHYEL,
-               values[cont].id,
+               result->values[i].id,
                COLOR_RESET,
                BHYEL,
-               values[cont].imc,
+               result->values[i].imc,
                COLOR_RESET,
                BHYEL,
-               values[cont].datetime,
+               result->values[i].datetime,
                COLOR_RESET);
 
         contReg++;
-        contRegTotal += values[cont].imc;
-        strcpy(ultimo_reg, values[cont].datetime);
-        cont++;
+        contRegTotal += result->values[i].imc;
+        strcpy(ultimo_reg, result->values[i].datetime);
     }
 
-    free(values);
+    free(result->values);
+    free(result);
 
     if (contReg != 0)
     {
