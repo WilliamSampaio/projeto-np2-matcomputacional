@@ -13,24 +13,24 @@ typedef struct
 
 typedef struct
 {
-    unsigned int id;
+    size_t id;
     char name[61];
     int genre;
     char login[21];
-    unsigned int password;
+    size_t password;
 } tbl_user_t;
 
 typedef struct
 {
-    unsigned int id;
-    unsigned int user_id;
+    size_t id;
+    size_t user_id;
     float imc;
     char *datetime;
 } tbl_imc_t;
 
 typedef struct
 {
-    unsigned long int num_rows;
+    size_t num_rows;
     tbl_imc_t *values;
 } tbl_imc_result_t;
 
@@ -41,4 +41,4 @@ int _dbInsertIMC(tbl_user_t *user, float imc, MYSQL **conn);
 int _dbAddUser(tbl_user_t new_user, MYSQL **conn);
 int _dbUpdateUser(tbl_user_t *user, tbl_user_t updated_user, MYSQL **conn);
 int _dbDeleteUser(tbl_user_t *user, MYSQL **conn);
-tbl_imc_result_t *_dbGetIMCbyUserId(tbl_user_t *user, MYSQL **conn);
+tbl_imc_result_t *_dbGetIMCbyUserId(size_t user_id, MYSQL **conn);

@@ -629,7 +629,7 @@ void _imcReport()
 {
     _imcTxtTitle();
 
-    tbl_imc_result_t *result = _dbGetIMCbyUserId(&user, &conn);
+    tbl_imc_result_t *result = _dbGetIMCbyUserId(user.id, &conn);
 
     if (result == NULL)
     {
@@ -679,7 +679,7 @@ void _imcReport()
 
     for (int i = 0; i < result->num_rows; i++)
     {
-        printf("|%s\t%d\t%s| %s%.2f\t\t%s|     %s%s%s     |\n",
+        printf("|%s\t%ld\t%s| %s%.2f\t\t%s|     %s%s%s     |\n",
                BHYEL,
                result->values[i].id,
                COLOR_RESET,

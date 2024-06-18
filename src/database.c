@@ -67,7 +67,7 @@ int _dbInsertIMC(tbl_user_t *_user, float _imc, MYSQL **_conn)
         return _False;
 
     char query[200];
-    sprintf(query, "INSERT INTO registros (usuarios_id,imc,datahora) VALUES (%d,%f,'%s')",
+    sprintf(query, "INSERT INTO registros (usuarios_id,imc,datahora) VALUES (%ld,%f,'%s')",
             _user->id,
             _imc,
             __DATE__ " - " __TIME__);
@@ -91,7 +91,7 @@ int _dbAddUser(tbl_user_t _user, MYSQL **_conn)
     char s = _user.genre == M ? 'M' : 'F';
 
     char query[200];
-    sprintf(query, "INSERT INTO usuarios (nome, sexo, login, senha) VALUES ('%s','%c','%s','%d')",
+    sprintf(query, "INSERT INTO usuarios (nome, sexo, login, senha) VALUES ('%s','%c','%s','%ld')",
             _user.name,
             s,
             _user.login,
@@ -116,7 +116,7 @@ int _dbUpdateUser(tbl_user_t *_user, tbl_user_t _updated_user, MYSQL **_conn)
     char s = _updated_user.genre == M ? 'M' : 'F';
 
     char query[200];
-    sprintf(query, "UPDATE usuarios SET nome = '%s', sexo = '%c', login = '%s', senha = %d WHERE id = %d",
+    sprintf(query, "UPDATE usuarios SET nome = '%s', sexo = '%c', login = '%s', senha = %ld WHERE id = %ld",
             _updated_user.name,
             s,
             _updated_user.login,
@@ -145,7 +145,7 @@ int _dbDeleteUser(tbl_user_t *_user, MYSQL **_conn)
         return _False;
 
     char query[200];
-    sprintf(query, "DELETE FROM usuarios WHERE id = %d", _user->id);
+    sprintf(query, "DELETE FROM usuarios WHERE id = %ld", _user->id);
 
     if (
         mysql_query(*_conn, query) != MYSQL_STATUS_READY ||
@@ -158,7 +158,7 @@ int _dbDeleteUser(tbl_user_t *_user, MYSQL **_conn)
     return _True;
 }
 
-tbl_imc_result_t *_dbGetIMCbyUserId(tbl_user_t *_user, MYSQL **_conn)
+tbl_imc_result_t *_dbGetIMCbyUserId(size_t _user_id, MYSQL **_conn)
 {
     if (*_conn == NULL)
         return NULL;
@@ -166,7 +166,7 @@ tbl_imc_result_t *_dbGetIMCbyUserId(tbl_user_t *_user, MYSQL **_conn)
     MYSQL_RES *res;
 
     char query[200];
-    sprintf(query, "SELECT * FROM registros WHERE usuarios_id = %d", _user->id);
+    sprintf(query, "SELECT * FROM registros WHERE usuarios_id = %ld", _user_id);
 
     if (
         mysql_query(*_conn, query) != MYSQL_STATUS_READY ||
